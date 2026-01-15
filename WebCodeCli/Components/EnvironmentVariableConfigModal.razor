@@ -1,7 +1,9 @@
+@using System.Text.Json
 @using WebCodeCli.Domain.Domain.Model
 @using WebCodeCli.Domain.Domain.Service
 @inject ICliExecutorService CliExecutorService
 @inject ICliToolEnvironmentService CliToolEnvironmentService
+@inject ILocalizationService L
 
 <div class="env-config-modal">
     @if (_isVisible)
@@ -15,7 +17,11 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
-                        <h3 class="text-lg font-bold text-gray-800">配置环境变量 - @_selectedTool?.Name</h3>
+                        <h3 class="text-lg font-bold text-gray-800">
+                            @(string.IsNullOrWhiteSpace(_selectedTool?.Name)
+                                ? T("envConfig.title")
+                                : T("envConfig.titleWithTool", ("tool", _selectedTool!.Name)))
+                        </h3>
                     </div>
                     <button @onclick="Close" class="text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-lg p-2 transition-all">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,10 +48,10 @@
                                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                                     </svg>
                                     <div class="text-sm text-gray-800">
-                                        <p class="font-bold mb-2">配置说明：</p>
-                                        <p class="mb-1">• 这里的配置将保存到数据库，优先于配置文件中的设置</p>
-                                        <p class="mb-1">• 环境变量的值采用密码形式，<span class="font-semibold text-red-600">仅可设置，不可查看或复制</span></p>
-                                        <p>• 点击"重置为默认"可恢复配置文件中的设置</p>
+                                        <p class="font-bold mb-2">@T("envConfig.descTitle")</p>
+                                        <p class="mb-1">• @T("envConfig.descSaveDb")</p>
+                                        <p class="mb-1">• @T("envConfig.descSecretPrefix")<span class="font-semibold text-red-600">@T("envConfig.descSecretHighlight")</span></p>
+                                        <p>• @T("envConfig.descReset")</p>
                                     </div>
                                 </div>
                             </div>
@@ -56,14 +62,14 @@
                                 <div class="card border-gray-300 shadow-sm hover:shadow-md transition-shadow p-4">
                                     <div class="flex gap-4 items-start">
                                         <div class="flex-1">
-                                            <label class="block text-sm font-bold text-gray-700 mb-2">键名</label>
+                                            <label class="block text-sm font-bold text-gray-700 mb-2">@T("envConfig.keyLabel")</label>
                                             <input type="text" 
                                                    @bind="kvp.Key"
                                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 text-sm transition-all hover:border-gray-400"
-                                                   placeholder="例如: OPENAI_API_KEY" />
+                                                   placeholder="@T("envConfig.keyPlaceholder")" />
                                         </div>
                                         <div class="flex-1">
-                                            <label class="block text-sm font-bold text-gray-700 mb-2">键值 (仅可设置，不可查看)</label>
+                                            <label class="block text-sm font-bold text-gray-700 mb-2">@T("envConfig.valueLabel")</label>
                                             <div class="relative">
                                                 <input type="password" 
                                                        @bind="kvp.Value"
@@ -72,13 +78,13 @@
                                                        oncut="return false"
                                                        onpaste="return true"
                                                        class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 text-sm transition-all hover:border-gray-400"
-                                                       placeholder="@(string.IsNullOrWhiteSpace(kvp.Value) ? "输入值..." : "••••••••")" />
+                                                       placeholder="@(string.IsNullOrWhiteSpace(kvp.Value) ? T("envConfig.valuePlaceholder") : "••••••••")" />
                                                 @if (!string.IsNullOrWhiteSpace(kvp.Value))
                                                 {
                                                     <button type="button"
                                                             @onclick="() => ClearValue(index)"
                                                             class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-                                                            title="清空值以重新设置">
+                                                            title="@T("envConfig.clearValueTitle")">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                         </svg>
@@ -89,7 +95,7 @@
                                         <div class="flex items-end">
                                             <button @onclick="() => RemoveEnvVar(index)" 
                                                     class="p-2.5 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all border border-transparent hover:border-red-200"
-                                                    title="删除此环境变量">
+                                                    title="@T("envConfig.removeTitle")">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                 </svg>
@@ -105,7 +111,7 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
-                                <span>添加环境变量</span>
+                                <span>@T("envConfig.addButton")</span>
                             </button>
                         </div>
                     }
@@ -116,13 +122,13 @@
                     <button @onclick="ResetToDefault" 
                             disabled="@_isLoading"
                             class="px-5 py-2.5 text-sm font-semibold text-amber-700 bg-white border border-amber-300 rounded-xl hover:bg-amber-50 hover:border-amber-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow">
-                        重置为默认
+                        @T("envConfig.resetButton")
                     </button>
                     <div class="flex gap-3">
                         <button @onclick="Close" 
                                 disabled="@_isLoading"
                                 class="btn-default disabled:opacity-50 disabled:cursor-not-allowed">
-                            取消
+                            @T("common.cancel")
                         </button>
                         <button @onclick="Save" 
                                 disabled="@_isLoading"
@@ -131,12 +137,12 @@
                             {
                                 <div class="flex items-center gap-2">
                                     <div class="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></div>
-                                    <span>保存中...</span>
+                                    <span>@T("envConfig.saving")</span>
                                 </div>
                             }
                             else
                             {
-                                <span>✓ 保存</span>
+                                <span>@T("envConfig.save")</span>
                             }
                         </button>
                     </div>
@@ -152,10 +158,19 @@
     private CliToolConfig? _selectedTool;
     private List<EnvVarItem> _envVars = new();
 
+    // 本地化相关
+    private Dictionary<string, string> _translations = new();
+    private string _currentLanguage = "zh-CN";
+
     private class EnvVarItem
     {
         public string Key { get; set; } = string.Empty;
         public string Value { get; set; } = string.Empty;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTranslationsAsync();
     }
 
     public async Task ShowAsync(CliToolConfig tool)
@@ -167,6 +182,8 @@
 
         try
         {
+            _currentLanguage = await L.GetCurrentLanguageAsync();
+            await LoadTranslationsAsync();
             var envVars = await CliToolEnvironmentService.GetEnvironmentVariablesAsync(tool.Id);
             _envVars = envVars.Select(kvp => new EnvVarItem { Key = kvp.Key, Value = kvp.Value }).ToList();
         }
@@ -278,4 +295,84 @@
             StateHasChanged();
         }
     }
+
+    #region 本地化辅助方法
+
+    private async Task LoadTranslationsAsync()
+    {
+        try
+        {
+            var allTranslations = await L.GetAllTranslationsAsync(_currentLanguage);
+            _translations = FlattenTranslations(allTranslations);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[环境变量配置] 加载翻译资源失败: {ex.Message}");
+        }
+    }
+
+    private Dictionary<string, string> FlattenTranslations(Dictionary<string, object> source, string prefix = "")
+    {
+        var result = new Dictionary<string, string>();
+
+        foreach (var kvp in source)
+        {
+            var key = string.IsNullOrEmpty(prefix) ? kvp.Key : $"{prefix}.{kvp.Key}";
+
+            if (kvp.Value is JsonElement jsonElement)
+            {
+                if (jsonElement.ValueKind == JsonValueKind.Object)
+                {
+                    var nested = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonElement.GetRawText());
+                    if (nested != null)
+                    {
+                        foreach (var item in FlattenTranslations(nested, key))
+                        {
+                            result[item.Key] = item.Value;
+                        }
+                    }
+                }
+                else if (jsonElement.ValueKind == JsonValueKind.String)
+                {
+                    result[key] = jsonElement.GetString() ?? key;
+                }
+            }
+            else if (kvp.Value is Dictionary<string, object> dict)
+            {
+                foreach (var item in FlattenTranslations(dict, key))
+                {
+                    result[item.Key] = item.Value;
+                }
+            }
+            else if (kvp.Value is string str)
+            {
+                result[key] = str;
+            }
+        }
+
+        return result;
+    }
+
+    private string T(string key)
+    {
+        if (_translations.TryGetValue(key, out var translation))
+        {
+            return translation;
+        }
+
+        var parts = key.Split('.');
+        return parts.Length > 0 ? parts[^1] : key;
+    }
+
+    private string T(string key, params (string name, string value)[] parameters)
+    {
+        var text = T(key);
+        foreach (var (name, value) in parameters)
+        {
+            text = text.Replace($"{{{name}}}", value);
+        }
+        return text;
+    }
+
+    #endregion
 }

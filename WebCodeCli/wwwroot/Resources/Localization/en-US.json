@@ -191,6 +191,25 @@
     "selectFile": "Select File",
     "uploadToWorkspace": "Upload to Workspace"
   },
+  "envConfig": {
+    "title": "Environment Variables",
+    "titleWithTool": "Environment Variables - {tool}",
+    "descTitle": "Configuration Notes:",
+    "descSaveDb": "These settings are saved to the database and take precedence over config files.",
+    "descSecretPrefix": "Environment variable values are stored as passwords; ",
+    "descSecretHighlight": "they can be set but not viewed or copied",
+    "descReset": "Click \"Reset to default\" to restore file-based settings.",
+    "keyLabel": "Key",
+    "keyPlaceholder": "e.g., OPENAI_API_KEY",
+    "valueLabel": "Value (set only, cannot view)",
+    "valuePlaceholder": "Enter a value...",
+    "clearValueTitle": "Clear the value to set again",
+    "removeTitle": "Remove this variable",
+    "addButton": "Add environment variable",
+    "resetButton": "Reset to default",
+    "saving": "Saving...",
+    "save": "Save"
+  },
   "progressTracker": {
     "stageInit": "Initializing",
     "stageAnalyze": "Analyzing",

@@ -191,6 +191,25 @@
     "selectFile": "选择文件",
     "uploadToWorkspace": "上传到工作区"
   },
+  "envConfig": {
+    "title": "配置环境变量",
+    "titleWithTool": "配置环境变量 - {tool}",
+    "descTitle": "配置说明：",
+    "descSaveDb": "这里的配置将保存到数据库，优先于配置文件中的设置",
+    "descSecretPrefix": "环境变量的值采用密码形式，",
+    "descSecretHighlight": "仅可设置，不可查看或复制",
+    "descReset": "点击\"重置为默认\"可恢复配置文件中的设置",
+    "keyLabel": "键名",
+    "keyPlaceholder": "例如: OPENAI_API_KEY",
+    "valueLabel": "键值 (仅可设置，不可查看)",
+    "valuePlaceholder": "输入值...",
+    "clearValueTitle": "清空值以重新设置",
+    "removeTitle": "删除此环境变量",
+    "addButton": "添加环境变量",
+    "resetButton": "重置为默认",
+    "saving": "保存中...",
+    "save": "保存"
+  },
   "progressTracker": {
     "stageInit": "初始化",
     "stageAnalyze": "分析中",
