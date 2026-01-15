@@ -1,5 +1,14 @@
 # WebCodeCli Docker 部署文档
 
+## 文档定位与优先级（必读）
+
+本文档是 **默认/推荐** 的部署入口：
+
+- 默认模式：**无需任何 .env 或环境变量配置**，首次访问通过 Web 设置向导完成管理员与 Claude/Codex 等配置。
+- 高级模式：如果你需要 **无人值守部署（预置密钥/模型/代理地址）**，或想了解 **容器内置 Claude/Codex CLI 的配置生成与验证**，请参考 `docs/Docker-CLI-集成部署指南.md`。
+
+> 命令说明：下文示例以 `docker compose`（Compose v2）为主；若你的环境仍是 `docker-compose`，可等价替换。
+
 ## 🚀 快速开始（推荐）
 
 **WebCodeCli 支持一键部署，无需任何配置文件！** 首次访问时，系统会自动引导您完成所有配置。
@@ -12,7 +21,7 @@ git clone https://github.com/xuzeyu91/WebCode.git
 cd WebCode
 
 # 2. 一键启动
-docker-compose up -d
+docker compose up -d
 
 # 3. 访问 http://localhost:5000
 #    首次访问会自动进入设置向导
@@ -50,7 +59,7 @@ WebCodeCli 采用 **Web 界面配置** 模式，所有配置都可以在首次�
 docker --version
 
 # 检查 Docker Compose
-docker-compose --version
+docker compose version
 ```
 
 ---
@@ -65,16 +74,16 @@ git clone https://github.com/xuzeyu91/WebCode.git
 cd WebCode
 
 # 一键启动
-docker-compose up -d
+docker compose up -d
 
 # 查看状态
-docker-compose ps
+docker compose ps
 ```
 
 **自定义端口：**
 ```bash
 # 使用环境变量指定端口
-APP_PORT=8080 docker-compose up -d
+APP_PORT=8080 docker compose up -d
 ```
 
 ### 方式二：Docker Run（高级配置）
@@ -261,7 +270,7 @@ docker exec webcodecli ls /root/.claude/skills/ | wc -l
 ### 6.1 查看日志
 ```bash
 # Docker Compose
-docker-compose logs -f
+docker compose logs -f
 
 # Docker Run
 docker logs -f webcodecli
@@ -270,7 +279,7 @@ docker logs -f webcodecli
 ### 6.2 重启服务
 ```bash
 # Docker Compose
-docker-compose restart
+docker compose restart
 
 # Docker Run
 docker restart webcodecli
@@ -282,13 +291,13 @@ docker restart webcodecli
 git pull
 
 # 重新构建并启动
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### 6.4 停止服务
 ```bash
 # Docker Compose
-docker-compose down
+docker compose down
 
 # Docker Run
 docker stop webcodecli
@@ -299,6 +308,9 @@ docker stop webcodecli
 ## 七、高级配置（环境变量）
 
 如果您需要在启动时预置配置，可以使用环境变量：
+
+- 默认不需要：不配置也能启动，首次访问走 Web 设置向导。
+- 需要预置/无人值守：建议按 `docs/Docker-CLI-集成部署指南.md` 的环境变量清单准备 `.env`（包含完整变量说明与 Codex 配置生成规则），本文仅给出示例。
 
 ### 7.1 通过 .env 文件
 
@@ -329,7 +341,7 @@ DB_CONNECTION=Data Source=/app/data/webcodecli.db
 EOF
 
 # 启动
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 7.2 通过命令行
@@ -352,10 +364,10 @@ docker run -d \
 ### 8.1 容器无法启动
 ```bash
 # 查看详细日志
-docker-compose logs
+docker compose logs
 
 # 检查容器状态
-docker-compose ps -a
+docker compose ps -a
 ```
 
 ### 8.2 端口被占用
@@ -364,19 +376,19 @@ docker-compose ps -a
 netstat -tlnp | grep 5000
 
 # 使用其他端口
-APP_PORT=8080 docker-compose up -d
+APP_PORT=8080 docker compose up -d
 ```
 
 ### 8.3 重置系统配置
 ```bash
 # 停止容器
-docker-compose down
+docker compose down
 
 # 删除数据卷（⚠️ 会清除所有数据）
 docker volume rm webcodecli-data
 
 # 重新启动
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 8.4 技能未加载
@@ -421,44 +433,7 @@ docker run --rm \
 tar xzf /backup/webcodecli-skills-20260114.tar.gz -C /data/webcode/WebCode
 
 # 重启容器
-docker-compose restart
-```
-
----
-
-## 十、推送镜像到阿里云
-
-### 10.1 登录阿里云容器镜像服务
-```bash
-docker login --username=your_alias registry.cn-hangzhou.aliyuncs.com
-```
-
-### 10.2 打标签并推送
-```bash
-# 获取镜像 ID
-docker images | grep webcodecli
-
-# 打标签
-docker tag [ImageId] registry.cn-hangzhou.aliyuncs.com/tree456/webcode:[镜像版本号]
-
-# 示例
-docker tag d3747c95c2c2 registry.cn-hangzhou.aliyuncs.com/tree456/webcode:1.0.0
-
-# 推送镜像
-docker push registry.cn-hangzhou.aliyuncs.com/tree456/webcode:1.0.0
-```
-
-### 10.3 使用阿里云镜像部署
-```bash
-# 拉取镜像
-docker pull registry.cn-hangzhou.aliyuncs.com/tree456/webcode:1.0.0
-
-# 运行容器
-docker run -d \
-  --name webcodecli \
-  --restart unless-stopped \
-  --network=host \
-  registry.cn-hangzhou.aliyuncs.com/tree456/webcode:1.0.0
+docker compose restart
 ```
 
 ---
@@ -493,8 +468,8 @@ docker run -d \
 ### Q: 首次访问没有跳转到设置向导？
 A: 可能是数据卷中已有旧配置。尝试删除数据卷后重新启动：
 ```bash
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 ```
 
 ### Q: 如何修改已保存的配置？

@@ -87,6 +87,15 @@ WebCodeCli is fully optimized for mobile devices:
 - ✅ Android phones (various sizes)
 - ✅ Chrome / Safari / Firefox / Edge mobile versions
 
+## 🖼️ Screenshots
+
+> These images are demo assets included in the repo; the actual UI may vary by version.
+
+![Coding assistant](images/coding.png)
+![PPT / document helper](images/ppt.png)
+![Skills / workflows](images/skill.png)
+![Games / creative examples](images/games.png)
+
 ## 🚀 Quick Start
 
 ### Option 1: Docker One-Click Deployment (Recommended)
@@ -99,13 +108,15 @@ git clone https://github.com/xuzeyu91/WebCode.git
 cd WebCode
 
 # One-click start
-docker-compose up -d
+docker compose up -d
 
 # Visit http://localhost:5000
 # First visit will automatically enter the setup wizard
 ```
 
 > 📖 For detailed deployment documentation, see [DEPLOY_DOCKER.md](./DEPLOY_DOCKER.md)
+>
+> 🔧 For pre-provisioning (env vars / unattended deploy) and built-in CLI verification, see [docs/Docker-CLI-集成部署指南.md](./docs/Docker-CLI-集成部署指南.md)
 
 ### Option 2: Local Development
 
@@ -132,7 +143,11 @@ The application will start at `http://localhost:5000`, visit `/code-assistant` t
 
 ### Configure CLI Tools
 
-Configure your AI CLI tools in `appsettings.json`:
+By default, you do not need to edit `appsettings.json`. After the first start, complete the setup wizard in the Web UI, or configure Claude/Codex later in System Settings.
+
+Use `appsettings.json` / environment variables only if you want pre-provisioning (CI/CD, unattended deployment, or fast local switching).
+
+Example (advanced):
 
 ```json
 {

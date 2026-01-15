@@ -1,9 +1,15 @@
-# WebCodeCli Docker 部署完整指南
+# WebCodeCli Docker-CLI 集成部署指南（高级）
 
-本文档详细说明如何使用 Docker 部署 WebCodeCli，包含内置的 Claude Code CLI 和 Codex CLI。
+本文档用于 **预置环境变量/无人值守部署** 场景，并补充说明容器内置的 Claude Code CLI 与 Codex CLI 的配置生成与验证方法。
+
+## 文档定位与优先级（必读）
+
+- **默认/推荐入口**：请优先阅读 `../DEPLOY_DOCKER.md`（一键启动 + 首次访问 Web 设置向导，默认无需任何 `.env`）。
+- **本文适用场景**：需要在容器启动时就注入密钥/模型/代理地址（例如 CI/CD 或不方便走向导），并希望直接验证 `claude` / `codex` CLI 是否可用。
 
 ## 目录
 
+- [文档定位与优先级（必读）](#文档定位与优先级必读)
 - [前置要求](#前置要求)
 - [快速开始](#快速开始)
 - [环境变量配置](#环境变量配置)
@@ -55,11 +61,15 @@ sudo systemctl enable docker
 
 ## 快速开始
 
+如果你只想把服务跑起来并通过 Web 向导配置：直接按 `../DEPLOY_DOCKER.md` 操作即可。
+
+以下步骤仅适用于“预置模式”（启动时注入密钥/模型配置）。
+
 ### 1. 克隆项目
 
 ```bash
-git clone <your-repo-url> webcodecli
-cd webcodecli
+git clone https://github.com/xuzeyu91/WebCode.git
+cd WebCode
 ```
 
 ### 2. 配置环境变量
@@ -72,7 +82,7 @@ cp .env.example .env
 nano .env  # 或使用 vim、vi
 ```
 
-**必须配置的环境变量：**
+**预置模式建议至少配置：**
 
 ```bash
 # Claude Code 认证令牌
@@ -86,7 +96,7 @@ NEW_API_KEY=your_codex_api_key_here
 
 ```bash
 # 构建镜像（首次需要较长时间）
-docker compose build
+docker compose build 
 
 # 启动服务（后台运行）
 docker compose up -d
@@ -102,6 +112,8 @@ docker compose logs -f
 ---
 
 ## 环境变量配置
+
+说明：下表中的“必填”是指 **预置模式**（跳过/弱依赖 Web 向导、启动即能用 CLI）下的必填项；如果你走 Web 设置向导，可先留空并在系统设置中配置。
 
 ### 完整环境变量列表
 
@@ -215,76 +227,20 @@ sandbox_mode = "danger-full-access"
 ---
 
 ## 构建和部署
+通用的 Docker Compose / Docker Run 部署方式、端口与数据卷说明、更新与回滚流程请参考 `../DEPLOY_DOCKER.md`。
 
-### 方式一：使用 Docker Compose（推荐）
+预置模式下推荐使用：
 
 ```bash
-# 构建镜像
-docker compose build
-
-# 启动服务
-docker compose up -d
-
-# 查看状态
-docker compose ps
-
-# 查看日志
+docker compose up -d --build
 docker compose logs -f webcodecli
-```
-
-### 方式二：单独使用 Docker
-
-```bash
-# 构建镜像
-docker build -t webcodecli:latest .
-
-# 运行容器
-docker run -d \
-  --name webcodecli \
-  -p 5000:5000 \
-  -e ANTHROPIC_BASE_URL="https://api.antsk.cn/" \
-  -e ANTHROPIC_AUTH_TOKEN="your_token" \
-  -e NEW_API_KEY="your_codex_key" \
-  -e CODEX_MODEL="glm-4.7" \
-  -v webcodecli-data:/app/data \
-  -v webcodecli-workspaces:/app/workspaces \
-  webcodecli:latest
-```
-
-### 生产环境部署
-
-```bash
-# 拉取代码
-git pull origin main
-
-# 停止旧容器
-docker compose down
-
-# 重新构建（使用缓存）
-docker compose build
-
-# 启动新容器
-docker compose up -d
-
-# 验证部署
-docker compose ps
-docker compose logs --tail=100 webcodecli
 ```
 
 ---
 
 ## 验证安装
 
-### 检查容器状态
-
-```bash
-# 查看容器运行状态
-docker compose ps
-
-# 应该看到类似输出：
-# NAME          IMAGE               STATUS          PORTS
-# webcodecli    webcodecli:latest   Up 2 minutes    0.0.0.0:5000->5000/tcp
-```
+容器状态与健康检查（`/health`）验证方式请参考 `../DEPLOY_DOCKER.md`。
 
 ### 验证 CLI 工具
 
@@ -309,12 +265,6 @@ echo $NEW_API_KEY
 exit
 ```
 
-### 检查健康状态
-
-```bash
-# 访问健康检查端点
-curl http://localhost:5000/health
-```
 
 ---
 
@@ -422,20 +372,9 @@ services:
 
 ## 故障排查
 
-### 1. 容器无法启动
+通用问题（容器无法启动、端口占用、健康检查失败、数据库/数据卷相关）请优先参考 `../DEPLOY_DOCKER.md` 的“故障排查”部分。
 
-```bash
-# 查看详细日志
-docker compose logs webcodecli
-
-# 查看容器状态
-docker compose ps -a
-
-# 检查端口占用
-netstat -tlnp | grep 5000
-```
-
-### 2. Claude Code 无法使用
+### 1. Claude Code 无法使用
 
 ```bash
 # 进入容器检查
@@ -452,7 +391,7 @@ echo $ANTHROPIC_AUTH_TOKEN
 claude --help
 ```
 
-### 3. Codex 无法使用
+### 2. Codex 无法使用
 
 ```bash
 # 进入容器检查
@@ -471,86 +410,32 @@ echo $NEW_API_KEY
 codex --help
 ```
 
-### 4. 健康检查失败
 
-```bash
-# 检查应用日志
-docker compose logs --tail=100 webcodecli
-
-# 手动测试健康端点
-docker compose exec webcodecli curl -f http://localhost:5000/health
-```
-
-### 5. 数据库连接失败
-
-```bash
-# 检查数据目录权限
-docker compose exec webcodecli ls -la /app/data
-
-# 检查数据库文件
-docker compose exec webcodecli cat /app/data/webcodecli.db
-```
+> 提示：若 `codex` 可以运行但行为不符合预期，优先检查 `/root/.codex/config.toml` 是否按环境变量正确生成。
 
 ---
 
 ## 常用命令
 
-### 容器管理
+容器管理、日志、备份与恢复等通用命令请参考 `../DEPLOY_DOCKER.md`。
+
+CLI 相关常用命令：
 
 ```bash
-# 启动服务
-docker compose up -d
-
-# 停止服务
-docker compose stop
-
-# 重启服务
-docker compose restart
-
-# 停止并删除容器
-docker compose down
-
-# 停止并删除容器和卷（危险：会删除数据）
-docker compose down -v
-```
-
-### 日志管理
-
-```bash
-# 查看实时日志
-docker compose logs -f
-
-# 查看最近 100 行日志
-docker compose logs --tail=100
-
-# 查看特定时间段日志
-docker compose logs --since="2024-01-01" --until="2024-01-02"
-```
-
-### 维护操作
-
-```bash
-# 进入容器 Shell
+# 进入容器
 docker compose exec webcodecli /bin/bash
 
-# 重新构建镜像（使用缓存）
-docker compose build
+# 查看版本
+claude --version
+codex --version
 
-# 重新构建镜像（不使用缓存）
-docker compose build --no-cache
+# 查看 Codex 自动生成的配置
+cat /root/.codex/config.toml
 
-# 拉取最新代码并重新部署
-git pull && docker compose up -d --build
-```
-
-### 备份和恢复
-
-```bash
-# 备份数据卷
-docker run --rm -v webcodecli-data:/data -v $(pwd):/backup alpine tar czf /backup/data-backup.tar.gz -C /data .
-
-# 恢复数据卷
-docker run --rm -v webcodecli-data:/data -v $(pwd):/backup alpine tar xzf /backup/data-backup.tar.gz -C /data
+# 查看关键环境变量是否注入
+echo $ANTHROPIC_BASE_URL
+echo $ANTHROPIC_AUTH_TOKEN
+echo $NEW_API_KEY
 ```
 
 ---

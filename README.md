@@ -87,6 +87,15 @@ WebCodeCli 针对移动设备进行了全面优化：
 - ✅ Android 手机（各尺寸）
 - ✅ Chrome / Safari / Firefox / Edge 移动版
 
+## 🖼️ 产品截图
+
+> 以下截图来自项目内置演示素材，实际界面以当前版本为准。
+
+![代码编程助手](images/coding.png)
+![PPT/文档辅助](images/ppt.png)
+![Skills/工作流](images/skill.png)
+![游戏/创意示例](images/games.png)
+
 ## 🚀 快速开始
 
 ### 方式一：Docker 一键部署（推荐）
@@ -99,13 +108,15 @@ git clone https://github.com/xuzeyu91/WebCode.git
 cd WebCode
 
 # 一键启动
-docker-compose up -d
+docker compose up -d
 
 # 访问 http://localhost:5000
 # 首次访问会自动进入设置向导
 ```
 
 > 📖 详细部署文档请参考 [DEPLOY_DOCKER.md](./DEPLOY_DOCKER.md)
+>
+> 🔧 需要预置环境变量/无人值守部署与内置 CLI 验证：参考 [docs/Docker-CLI-集成部署指南.md](./docs/Docker-CLI-集成部署指南.md)
 
 ### 方式二：本地开发运行
 
@@ -130,9 +141,17 @@ dotnet run --project WebCodeCli
 
 应用将在 `http://localhost:5000` 启动，访问 `/code-assistant` 开始编程！
 
-### 配置 CLI 工具
+### 配置 Claude/Codex 等 CLI（推荐界面配置）
 
-在 `appsettings.json` 中配置你的 AI CLI 工具：
+默认情况下，无需编辑 `appsettings.json`：首次启动后在 Web 界面完成设置向导，或登录后在“系统设置”中配置 Claude/Codex 等参数。
+
+仅在以下场景建议使用 `appsettings.json` / 环境变量进行预置：
+
+- 需要无人值守部署（CI/CD）
+- 需要把配置写死在镜像/配置文件中
+- 进行本地开发调试且希望用文件快速切换配置
+
+示例（高级用法）：
 
 ```json
 {
@@ -225,7 +244,7 @@ WebCodeCli/
 - [Codex 配置说明](./docs/Codex配置说明.md)
 - [环境变量配置](./docs/环境变量配置功能说明.md)
 
-## � 推荐 Skills
+## 💡 推荐 Skills
 
 提升 AI 编程助手能力的优秀 Skills 资源：
 
@@ -235,7 +254,7 @@ WebCodeCli/
 
 > 💡 **提示**：这些 Skills 可以与 Claude Code CLI 等 AI 助手配合使用，增强代码生成、项目规划、UI 设计等能力。
 
-## �🔧 使用场景
+## 🛠️ 使用场景
 
 ### 1. 移动办公
 在手机上通过浏览器远程控制服务器上的 AI 编程助手，随时处理代码任务。
