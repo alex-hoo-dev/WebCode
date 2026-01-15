@@ -29,21 +29,21 @@ cat > "${CODEX_CONFIG_FILE}" << EOF
 model = "${CODEX_MODEL:-glm-4.7}"
 model_reasoning_effort = "${CODEX_MODEL_REASONING_EFFORT:-medium}"
 
-profile = "${CODEX_PROFILE:-ipsa}"
+profile = "${CODEX_PROFILE:-webcode}"
 windows_wsl_setup_acknowledged = true
 
-[model_providers.${CODEX_PROFILE:-ipsa}]
-name = "${CODEX_PROVIDER_NAME:-azure codex-mini}"
+[model_providers.${CODEX_PROFILE:-webcode}]
+name = "${CODEX_PROVIDER_NAME:-webcode codex}"
 base_url = "${CODEX_BASE_URL:-https://api.antsk.cn/v1}"
 env_key = "NEW_API_KEY"
-wire_api = "chat"
+wire_api = "${CODEX_WIRE_API:-chat}"
 
 
-[profiles.${CODEX_PROFILE:-ipsa}]
+[profiles.${CODEX_PROFILE:-webcode}]
 # 深度模型
 model = "${CODEX_MODEL:-glm-4.7}"
 # provider id
-model_provider = "${CODEX_PROFILE:-ipsa}"
+model_provider = "${CODEX_PROFILE:-webcode}"
 # 审批策略
 approval_policy = "${CODEX_APPROVAL_POLICY:-never}"
 # 推理强度
@@ -115,10 +115,31 @@ mkdir -p /app/data
 mkdir -p /app/workspaces
 mkdir -p /app/logs
 
-# 设置权限
-chmod -R 755 /app/data
-chmod -R 755 /app/workspaces
-chmod -R 755 /app/logs
+# ============================================
+# 配置 Claude Code Skills
+# ============================================
+echo "Configuring Claude Code Skills..."
+CLAUDE_SKILLS_DIR="/home/appuser/.claude/skills"
+if [ -d "/app/skills/claude" ]; then
+    echo "Copying Claude Code skills to $CLAUDE_SKILLS_DIR..."
+    mkdir -p "$CLAUDE_SKILLS_DIR"
+    cp -r /app/skills/claude/* "$CLAUDE_SKILLS_DIR/"
+    echo "Claude Code skills installed:"
+    ls "$CLAUDE_SKILLS_DIR" || echo "No skills found"
+fi
+
+# ============================================
+# 配置 Codex Skills
+# ============================================
+echo "Configuring Codex Skills..."
+CODEX_SKILLS_DIR="/home/appuser/.codex/skills"
+if [ -d "/app/skills/codex" ]; then
+    echo "Copying Codex skills to $CODEX_SKILLS_DIR..."
+    mkdir -p "$CODEX_SKILLS_DIR"
+    cp -r /app/skills/codex/* "$CODEX_SKILLS_DIR/"
+    echo "Codex skills installed:"
+    ls "$CODEX_SKILLS_DIR" || echo "No skills found"
+fi
 
 echo ""
 

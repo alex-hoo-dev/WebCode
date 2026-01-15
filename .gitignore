@@ -369,3 +369,6 @@ FodyWeavers.xsd
 /claude-code
 /.claude
 /nul
+/webcodecli-data
+webcodecli-workspaces
+/webcodecli-logs

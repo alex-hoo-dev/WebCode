@@ -67,6 +67,7 @@ public partial class Setup : ComponentBase
             new() { Key = "CODEX_MODEL", Value = "" },
             new() { Key = "CODEX_PROFILE", Value = "" },
             new() { Key = "CODEX_PROVIDER_NAME", Value = "" },
+            new() { Key = "CODEX_WIRE_API", Value = "" },
             new() { Key = "CODEX_APPROVAL_POLICY", Value = "" },
             new() { Key = "CODEX_MODEL_REASONING_EFFORT", Value = "" },
             new() { Key = "CODEX_SANDBOX_MODE", Value = "" }
@@ -221,5 +222,31 @@ public partial class Setup : ComponentBase
     {
         _codexEnvVars.Remove(item);
         StateHasChanged();
+    }
+
+    // 获取环境变量的提示文本
+    private string GetEnvVarPlaceholder(string key)
+    {
+        return key switch
+        {
+            // Claude Code 相关
+            "ANTHROPIC_API_KEY" => "sk-ant-api03-...",
+            "ANTHROPIC_BASE_URL" => "https://api.antsk.cn (默认)",
+            "ANTHROPIC_MODEL" => "glm-4.7 (默认)",
+            "ANTHROPIC_SMALL_FAST_MODEL" => "glm-4.7",
+            
+            // Codex 相关
+            "NEW_API_KEY" => "sk-...",
+            "CODEX_BASE_URL" => "https://api.antsk.cn/v1 (默认)",
+            "CODEX_MODEL" => "glm-4.7 (默认)",
+            "CODEX_PROFILE" => "webcode (默认)",
+            "CODEX_PROVIDER_NAME" => "webcode codex (默认)",
+            "CODEX_WIRE_API" => "chat (默认，可选: chat/responses)",
+            "CODEX_APPROVAL_POLICY" => "never (默认，可选: always/unless-allow-listed)",
+            "CODEX_MODEL_REASONING_EFFORT" => "medium (默认，可选: low/high)",
+            "CODEX_SANDBOX_MODE" => "danger-full-access (默认)",
+            
+            _ => "请输入值"
+        };
     }
 }
