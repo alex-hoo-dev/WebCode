@@ -117,7 +117,7 @@ mkdir -p /app/logs
 
 # 修复目录权限（应用以 appuser 运行）
 echo "Fixing directory permissions..."
-chown -R appuser:appuser /app/data /app/workspaces /app/logs
+chown -R appuser:appuser /app/data /app/workspaces /app/logs 2>/dev/null || echo "Note: Could not change ownership (mounted volumes)"
 
 # ============================================
 # 配置 Claude Code Skills

@@ -7,7 +7,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# 安装 Node.js（用于 TailwindCSS 构建）
+# 安装 Node.js（使用官方源，国内网络已优化）
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
@@ -22,9 +22,9 @@ RUN dotnet restore "WebCodeCli/WebCodeCli.csproj"
 # 复制源代码
 COPY . .
 
-# 构建 TailwindCSS
+# 构建 TailwindCSS（使用淘宝 npm 镜像）
 WORKDIR /src/WebCodeCli
-RUN npm install && npm run build:css
+RUN npm install --registry=https://registry.npmmirror.com && npm run build:css
 
 # 构建 .NET 应用
 RUN dotnet build "WebCodeCli.csproj" -c Release -o /app/build
@@ -60,14 +60,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 Node.js 20.x
+# 配置 pip 国内镜像
+RUN pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+
+# 安装 Node.js 20.x（使用官方源）
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 Rust（Codex 需要）
+# 安装 Rust（使用国内镜像）
 ENV RUSTUP_HOME=/usr/local/rustup
 ENV CARGO_HOME=/usr/local/cargo
+ENV RUSTUP_DIST_SERVER=https://mirrors.ustc.edu.cn/rust-static
+ENV RUSTUP_UPDATE_ROOT=https://mirrors.ustc.edu.cn/rust-static/rustup
 ENV PATH=/usr/local/cargo/bin:$PATH
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
 

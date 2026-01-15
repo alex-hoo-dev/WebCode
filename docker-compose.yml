@@ -15,9 +15,6 @@ services:
     container_name: webcodecli
     restart: unless-stopped
     
-    ports:
-      - "${APP_PORT:-5000}:5000"
-    
     environment:
       # ============================================
       # 应用配置（必需）
@@ -64,11 +61,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '4'
-          memory: 4G
+          cpus: '2'
+          memory: 2G
         reservations:
-          cpus: '1'
-          memory: 1G
+          cpus: '0.5'
+          memory: 512M
 
     # 日志配置
     logging:
