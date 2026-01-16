@@ -137,7 +137,9 @@ CLAUDE_SKILLS_DIR="/home/appuser/.claude/skills"
 if [ -d "/app/skills/claude" ]; then
     echo "Copying Claude Code skills to $CLAUDE_SKILLS_DIR..."
     mkdir -p "$CLAUDE_SKILLS_DIR"
+    chown -R appuser:appuser /home/appuser/.claude
     cp -r /app/skills/claude/* "$CLAUDE_SKILLS_DIR/"
+    chown -R appuser:appuser /home/appuser/.claude
     echo "Claude Code skills installed:"
     ls "$CLAUDE_SKILLS_DIR" || echo "No skills found"
 fi
@@ -150,7 +152,9 @@ CODEX_SKILLS_DIR="/home/appuser/.codex/skills"
 if [ -d "/app/skills/codex" ]; then
     echo "Copying Codex skills to $CODEX_SKILLS_DIR..."
     mkdir -p "$CODEX_SKILLS_DIR"
+    chown -R appuser:appuser /home/appuser/.codex
     cp -r /app/skills/codex/* "$CODEX_SKILLS_DIR/"
+    chown -R appuser:appuser /home/appuser/.codex
     echo "Codex skills installed:"
     ls "$CODEX_SKILLS_DIR" || echo "No skills found"
 fi
