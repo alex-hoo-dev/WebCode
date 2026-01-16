@@ -106,6 +106,37 @@ docker-compose up -d --build
 
 ## ❓ 常见问题
 
+### Q: Docker 构建失败，提示 "failed to set up container networking" 或 "operation not supported"
+
+这通常发生在某些 VPS 环境（如 OpenVZ 容器化环境）或嵌套 Docker 环境中。解决方案：
+
+**方案1：使用 host 网络模式构建（推荐）**
+
+```bash
+# 直接使用 docker build 命令，指定 host 网络
+docker build --network=host -t webcodecli:latest -f Dockerfile .
+
+# 然后启动容器
+docker-compose up -d
+```
+
+**方案2：分步构建**
+
+```bash
+# 先单独构建镜像
+DOCKER_BUILDKIT=0 docker build --network=host -t webcodecli:latest .
+
+# 再启动服务（跳过构建）
+docker-compose up -d --no-build
+```
+
+**方案3：如果仍然失败，尝试禁用 BuildKit**
+
+```bash
+DOCKER_BUILDKIT=0 docker-compose build --no-cache
+docker-compose up -d
+```
+
 ### Q: 如何修改 API 配置？
 
 登录系统后，在主界面点击「设置」按钮，可以修改环境变量配置。
