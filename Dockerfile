@@ -60,8 +60,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 su-exec（用于降权执行，Debian 官方源自带）
-RUN apt-get update && apt-get install -y su-exec && rm -rf /var/lib/apt/lists/*
+# setpriv 已包含在 util-linux 中，无需额外安装
 
 # 配置 pip 国内镜像
 RUN pip3 config set global.index-url https://mirrors.aliyun.com/pypi/simple/

@@ -158,5 +158,5 @@ echo ""
 echo "Starting WebCodeCli application as appuser..."
 echo "============================================"
 
-# 使用 su-exec 切换到 appuser 用户执行命令
-exec su-exec appuser "$@"
+# 使用 setpriv 切换到 appuser 用户执行命令
+exec setpriv --reuid=appuser --regid=appuser --clear-groups "$@"
