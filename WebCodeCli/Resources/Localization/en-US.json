@@ -261,7 +261,12 @@
     "tryChangePreviewRoot": "Try changing the preview root to find frontend projects",
     "serverRunning": "Running",
     "port": "Port",
-    "preview": "Preview"
+    "preview": "Preview",
+    "fileTree": "File Tree",
+    "versionHistory": "Version History",
+    "fileDiff": "File Diff",
+    "fileMonitor": "File Monitor",
+    "fileSearch": "File Search"
   },
   "envConfig": {
     "title": "Environment Variables",

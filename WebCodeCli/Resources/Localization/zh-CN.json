@@ -261,7 +261,12 @@
     "tryChangePreviewRoot": "尝试更改预览根目录以查找前端项目",
     "serverRunning": "运行中",
     "port": "端口",
-    "preview": "预览"
+    "preview": "预览",
+    "fileTree": "文件树",
+    "versionHistory": "版本历史",
+    "fileDiff": "文件对比",
+    "fileMonitor": "实时监控",
+    "fileSearch": "文件搜索"
   },
   "envConfig": {
     "title": "配置环境变量",

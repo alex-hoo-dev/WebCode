@@ -324,7 +324,11 @@
     "tryChangePreviewRoot": "프론트엔드 프로젝트를 찾으려면 미리보기 루트를 변경해 보세요",
     "serverRunning": "실행 중",
     "port": "포트",
-    "preview": "미리보기"
+    "preview": "미리보기",
+    "versionHistory": "버전 기록",
+    "fileDiff": "파일 비교",
+    "fileMonitor": "실시간 모니터링",
+    "fileSearch": "파일 검색"
   },
   "envConfig": {
     "title": "환경 변수 설정",
@@ -344,11 +348,6 @@
     "resetButton": "기본값으로 재설정",
     "saving": "저장 중...",
     "save": "저장"
-  },
-    "versionHistory": "버전 기록",
-    "fileDiff": "파일 비교",
-    "fileMonitor": "실시간 모니터링",
-    "fileSearch": "파일 검색"
   },
   "fileSearch": {
     "debugLabel": "디버그",

@@ -324,7 +324,11 @@
     "tryChangePreviewRoot": "フロントエンドプロジェクトを見つけるにはプレビュールートを変更してみてください",
     "serverRunning": "実行中",
     "port": "ポート",
-    "preview": "プレビュー"
+    "preview": "プレビュー",
+    "versionHistory": "バージョン履歴",
+    "fileDiff": "ファイル比較",
+    "fileMonitor": "リアルタイム監視",
+    "fileSearch": "ファイル検索"
   },
   "envConfig": {
     "title": "環境変数を設定",
@@ -344,11 +348,6 @@
     "resetButton": "既定に戻す",
     "saving": "保存中...",
     "save": "保存"
-  },
-    "versionHistory": "バージョン履歴",
-    "fileDiff": "ファイル比較",
-    "fileMonitor": "リアルタイム監視",
-    "fileSearch": "ファイル検索"
   },
   "fileSearch": {
     "debugLabel": "デバッグ",
