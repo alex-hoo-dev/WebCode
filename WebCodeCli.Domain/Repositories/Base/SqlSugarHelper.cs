@@ -14,8 +14,8 @@ namespace WebCodeCli.Domain.Repositories.Base
         public static SqlSugarScope SqlScope()
         {
 
-            string DBType = DBConnectionOption.DbType;
-            string ConnectionString = DBConnectionOption.ConnectionStrings;
+            string DBType = DBConnectionOption.Instance.DbType;
+            string ConnectionString = DBConnectionOption.Instance.ConnectionStrings;
 
             var config = new ConnectionConfig()
             {

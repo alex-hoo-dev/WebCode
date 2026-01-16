@@ -64,19 +64,17 @@ builder.Services.AddHostedService<WorkspaceCleanupBackgroundService>();
 var dbConfig = builder.Configuration.GetSection("DBConnection").Get<DBConnectionOption>();
 if (dbConfig != null)
 {
-    DBConnectionOption.DbType = dbConfig.DbType;
-    
     // 根据操作系统设置默认数据库路径
     if (string.IsNullOrEmpty(dbConfig.ConnectionStrings) || dbConfig.ConnectionStrings == "Data Source=WebCodeCli.db")
     {
         // Windows 使用当前目录，Linux 使用 /app/data 目录
         if (OperatingSystem.IsWindows())
         {
-            DBConnectionOption.ConnectionStrings = "Data Source=WebCodeCli.db";
+            dbConfig.ConnectionStrings = "Data Source=WebCodeCli.db";
         }
         else
         {
-            DBConnectionOption.ConnectionStrings = "Data Source=/app/data/WebCodeCli.db";
+            dbConfig.ConnectionStrings = "Data Source=/app/data/WebCodeCli.db";
             
             // 确保 Linux 数据目录存在
             var dataDir = "/app/data";
@@ -87,13 +85,12 @@ if (dbConfig != null)
             }
         }
     }
-    else
-    {
-        DBConnectionOption.ConnectionStrings = dbConfig.ConnectionStrings;
-    }
     
-    Log.Information($"Database Type: {DBConnectionOption.DbType}");
-    Log.Information($"Connection String: {DBConnectionOption.ConnectionStrings}");
+    // 设置全局实例
+    DBConnectionOption.Instance = dbConfig;
+    
+    Log.Information($"Database Type: {DBConnectionOption.Instance.DbType}");
+    Log.Information($"Connection String: {DBConnectionOption.Instance.ConnectionStrings}");
 }
 
 builder.Configuration.GetSection("OpenAI").Get<OpenAIOption>();
