@@ -3863,10 +3863,47 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
         if (_shareSessionModal != null)
         {
             // 序列化消息为JSON
+            // 如果分享的是当前会话，使用最新的 _messages 列表，而不是 session.Messages
+            // 因为在用户输入过程中，_messages 是最新的数据源，而 session.Messages 只有在保存后才会更新
             string? messagesJson = null;
-            if (session.Messages != null && session.Messages.Count > 0)
+            List<ChatMessage>? messagesToShare = null;
+            
+            if (session.SessionId == _sessionId && _messages != null && _messages.Count > 0)
             {
-                messagesJson = System.Text.Json.JsonSerializer.Serialize(session.Messages);
+                // 分享的是当前会话，使用最新的消息列表
+                messagesToShare = _messages;
+            }
+            else if (session.Messages != null && session.Messages.Count > 0)
+            {
+                // 分享的是其他会话，使用会话自带的消息
+                messagesToShare = session.Messages;
+            }
+            
+            if (messagesToShare != null && messagesToShare.Count > 0)
+            {
+                messagesJson = System.Text.Json.JsonSerializer.Serialize(messagesToShare);
+            }
+            
+            // 序列化输出事件为JSON（如果分享的是当前会话且有JSONL事件）
+            string? outputEventsJson = null;
+            if (session.SessionId == _sessionId && _jsonlEvents != null && _jsonlEvents.Count > 0)
+            {
+                // 将 _jsonlEvents 序列化为可存储的格式
+                var outputEvents = _jsonlEvents.Select(evt => new
+                {
+                    Type = evt.Type,
+                    Title = evt.Title,
+                    Content = evt.Content,
+                    ItemType = evt.ItemType,
+                    IsUnknown = evt.IsUnknown,
+                    Usage = evt.Usage == null ? null : new
+                    {
+                        evt.Usage.InputTokens,
+                        evt.Usage.CachedInputTokens,
+                        evt.Usage.OutputTokens
+                    }
+                }).ToList();
+                outputEventsJson = System.Text.Json.JsonSerializer.Serialize(outputEvents);
             }
             
             await _shareSessionModal.ShowAsync(
@@ -3876,7 +3913,8 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
                 session.WorkspacePath,
                 messagesJson,
                 session.CreatedAt,
-                session.UpdatedAt
+                session.UpdatedAt,
+                outputEventsJson
             );
         }
     }
@@ -5554,6 +5592,62 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
 
     #endregion
 
+    #region 输出结果面板转换方法
+
+    /// <summary>
+    /// 将 JsonlEventGroup 转换为 OutputEventGroup
+    /// </summary>
+    private List<OutputEventGroup> ConvertToOutputEventGroups(List<JsonlEventGroup> jsonlGroups)
+    {
+        return jsonlGroups.Select(g => new OutputEventGroup
+        {
+            Id = g.Id,
+            Kind = g.Kind,
+            Title = g.Title,
+            IsCompleted = g.IsCompleted,
+            IsCollapsible = g.IsCollapsible,
+            Items = g.Items.Select(i => new OutputEvent
+            {
+                Type = i.Type,
+                Title = i.Title,
+                Content = i.Content,
+                Name = null, // JsonlDisplayItem 没有 Name 属性
+                ItemType = i.ItemType,
+                Usage = i.Usage != null ? new TokenUsage
+                {
+                    InputTokens = (int?)i.Usage.InputTokens,
+                    CachedInputTokens = (int?)i.Usage.CachedInputTokens,
+                    OutputTokens = (int?)i.Usage.OutputTokens,
+                    TotalTokens = (int?)i.Usage.TotalTokens
+                } : null
+            }).ToList()
+        }).ToList();
+    }
+
+    /// <summary>
+    /// 将 OutputEventGroup 转换回 JsonlEventGroup
+    /// </summary>
+    private JsonlEventGroup ConvertToJsonlGroup(OutputEventGroup outputGroup)
+    {
+        return new JsonlEventGroup
+        {
+            Id = outputGroup.Id,
+            Kind = outputGroup.Kind,
+            Title = outputGroup.Title,
+            IsCompleted = outputGroup.IsCompleted,
+            IsCollapsible = outputGroup.IsCollapsible
+        };
+    }
+
+    /// <summary>
+    /// 处理组折叠/展开事件
+    /// </summary>
+    private void HandleToggleGroup((string groupId, bool defaultOpen) args)
+    {
+        ToggleJsonlGroup(args.groupId, args.defaultOpen);
+    }
+
+    #endregion
+
     #endregion
 }
-

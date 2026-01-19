@@ -74,7 +74,8 @@ public class SessionShareService : ISessionShareService
             WorkspacePath = request.WorkspacePath,
             MessagesJson = request.MessagesJson,
             SessionCreatedAt = request.SessionCreatedAt,
-            SessionUpdatedAt = request.SessionUpdatedAt
+            SessionUpdatedAt = request.SessionUpdatedAt,
+            OutputEventsJson = request.OutputEventsJson
         };
         
         var success = await _repository.InsertAsync(share);
@@ -130,7 +131,8 @@ public class SessionShareService : ISessionShareService
             MessagesJson = share.MessagesJson,
             CreatedAt = share.SessionCreatedAt,
             UpdatedAt = share.SessionUpdatedAt,
-            IsWorkspaceValid = isWorkspaceValid
+            IsWorkspaceValid = isWorkspaceValid,
+            OutputEventsJson = share.OutputEventsJson
         };
     }
     
@@ -389,6 +391,38 @@ public class SessionShareService : ISessionShareService
         CleanupExpiredTokens();
         
         return count;
+    }
+    
+    /// <summary>
+    /// 更新分享的会话数据快照
+    /// </summary>
+    public async Task<bool> UpdateShareSnapshotAsync(string shareCode, UpdateShareSnapshotRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(shareCode))
+        {
+            _logger.LogWarning("更新分享快照失败：分享码为空");
+            return false;
+        }
+        
+        var result = await _repository.UpdateSnapshotAsync(
+            shareCode,
+            request.SessionTitle,
+            request.ToolId,
+            request.WorkspacePath,
+            request.MessagesJson,
+            request.SessionUpdatedAt,
+            request.OutputEventsJson);
+        
+        if (result)
+        {
+            _logger.LogInformation("分享快照已更新: ShareCode={ShareCode}", shareCode);
+        }
+        else
+        {
+            _logger.LogWarning("更新分享快照失败：分享不存在, ShareCode={ShareCode}", shareCode);
+        }
+        
+        return result;
     }
     
     #region 私有方法

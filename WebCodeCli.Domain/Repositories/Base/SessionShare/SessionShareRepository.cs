@@ -137,4 +137,27 @@ public class SessionShareRepository : Repository<SessionShare>, ISessionShareRep
         
         return expiredShares.Count;
     }
+    
+    /// <summary>
+    /// 更新分享的会话数据快照
+    /// </summary>
+    public async Task<bool> UpdateSnapshotAsync(string shareCode, string? sessionTitle, string? toolId, 
+        string? workspacePath, string? messagesJson, DateTime? sessionUpdatedAt, string? outputEventsJson = null)
+    {
+        var share = await GetByShareCodeAsync(shareCode);
+        if (share == null)
+        {
+            return false;
+        }
+        
+        // 更新会话数据快照
+        share.SessionTitle = sessionTitle;
+        share.ToolId = toolId;
+        share.WorkspacePath = workspacePath;
+        share.MessagesJson = messagesJson;
+        share.SessionUpdatedAt = sessionUpdatedAt ?? DateTime.Now;
+        share.OutputEventsJson = outputEventsJson;
+        
+        return await UpdateAsync(share);
+    }
 }

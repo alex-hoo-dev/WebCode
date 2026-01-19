@@ -1,0 +1,427 @@
+@using System.Text.Json
+@inject IJSRuntime JSRuntime
+
+@* 文件预览面板 - 支持代码、图片、HTML、PDF 等多种文件类型 *@
+<div class="@ContainerClass">
+    @if (IsLoading)
+    {
+        <div class="flex items-center justify-center h-full">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                <p class="text-sm text-gray-500">正在加载...</p>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="flex items-center justify-center h-full">
+            <div class="text-center text-red-600">
+                <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <p class="font-semibold">@ErrorMessage</p>
+            </div>
+        </div>
+    }
+    else if (PreviewType == FilePreviewType.Image)
+    {
+        <div class="@(FullHeight ? "h-full" : "") flex items-center justify-center bg-gray-100 p-4">
+            <img src="@ImageUrl" alt="@FileName" class="max-w-full max-h-full object-contain shadow-lg rounded" />
+        </div>
+    }
+    else if (PreviewType == FilePreviewType.Html)
+    {
+        <iframe src="@HtmlUrl" 
+                class="w-full @(FullHeight ? "h-full" : "h-96") border-0" 
+                sandbox="allow-scripts allow-same-origin"
+                referrerpolicy="no-referrer"></iframe>
+    }
+    else if (PreviewType == FilePreviewType.Pdf)
+    {
+        <iframe src="@PdfDataUrl" 
+                class="w-full @(FullHeight ? "h-full" : "h-96") border-0"
+                type="application/pdf"></iframe>
+    }
+    else if (PreviewType == FilePreviewType.Office)
+    {
+        @if (IsLoadingOffice)
+        {
+            <div class="flex items-center justify-center h-full bg-gray-50">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                    <p class="text-gray-600 font-medium">正在加载预览...</p>
+                    <p class="text-xs text-gray-400 mt-2">使用 Microsoft Office 在线预览</p>
+                </div>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(OfficePreviewError))
+        {
+            <div class="flex items-center justify-center h-full bg-gray-50 p-8">
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+                        <svg class="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">无法预览此文件</h4>
+                    <p class="text-gray-600 text-center max-w-md whitespace-pre-line">@OfficePreviewError</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="@(FullHeight ? "h-full" : "h-96") bg-gray-100">
+                <iframe src="@OfficePreviewUrl" 
+                        class="w-full h-full border-0"
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+            </div>
+        }
+    }
+    else if (PreviewType == FilePreviewType.Code)
+    {
+        <div class="@(FullHeight ? "h-full" : MaxHeight ?? "max-h-[calc(100vh-12rem)]") overflow-y-auto bg-gray-900">
+            <pre class="!m-0 !p-4"><code id="@CodeElementId" class="language-@Language !text-sm @(ShowLineNumbers ? "line-numbers" : "")">@FileContent</code></pre>
+        </div>
+    }
+    else if (PreviewType == FilePreviewType.Text)
+    {
+        <div class="@(FullHeight ? "h-full" : MaxHeight ?? "max-h-[calc(100vh-12rem)]") overflow-y-auto bg-white">
+            <pre class="p-4 text-sm font-mono text-gray-800 whitespace-pre-wrap break-words">@FileContent</pre>
+        </div>
+    }
+    else
+    {
+        <div class="flex items-center justify-center h-full">
+            <div class="text-center text-gray-400">
+                <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                </svg>
+                <p class="text-lg">@(string.IsNullOrEmpty(EmptyMessage) ? "选择文件以查看内容" : EmptyMessage)</p>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// 文件预览类型
+    /// </summary>
+    public enum FilePreviewType
+    {
+        None,      // 未选择文件
+        Code,      // 代码文件
+        Text,      // 纯文本文件
+        Image,     // 图片文件
+        Html,      // HTML 文件
+        Pdf,       // PDF 文件
+        Office,    // Office 文档（Word/Excel/PowerPoint）
+        Unknown    // 不支持预览
+    }
+
+    /// <summary>
+    /// 预览类型
+    /// </summary>
+    [Parameter] public FilePreviewType PreviewType { get; set; } = FilePreviewType.None;
+
+    /// <summary>
+    /// 文件名
+    /// </summary>
+    [Parameter] public string FileName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 文件内容（文本类型）
+    /// </summary>
+    [Parameter] public string FileContent { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 编程语言（用于语法高亮）
+    /// </summary>
+    [Parameter] public string Language { get; set; } = "plaintext";
+
+    /// <summary>
+    /// 图片 URL
+    /// </summary>
+    [Parameter] public string ImageUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// HTML 文件 URL
+    /// </summary>
+    [Parameter] public string HtmlUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// PDF Data URL
+    /// </summary>
+    [Parameter] public string PdfDataUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Office 预览 URL
+    /// </summary>
+    [Parameter] public string OfficePreviewUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Office 预览错误信息
+    /// </summary>
+    [Parameter] public string OfficePreviewError { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 是否正在加载 Office 预览
+    /// </summary>
+    [Parameter] public bool IsLoadingOffice { get; set; } = false;
+
+    /// <summary>
+    /// 是否显示行号
+    /// </summary>
+    [Parameter] public bool ShowLineNumbers { get; set; } = false;
+
+    /// <summary>
+    /// 代码元素 ID（用于语法高亮）
+    /// </summary>
+    [Parameter] public string CodeElementId { get; set; } = "file-preview-code";
+
+    /// <summary>
+    /// 是否正在加载
+    /// </summary>
+    [Parameter] public bool IsLoading { get; set; } = false;
+
+    /// <summary>
+    /// 错误消息
+    /// </summary>
+    [Parameter] public string ErrorMessage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 空状态消息
+    /// </summary>
+    [Parameter] public string EmptyMessage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 容器样式类
+    /// </summary>
+    [Parameter] public string ContainerClass { get; set; } = "w-full h-full";
+
+    /// <summary>
+    /// 最大高度
+    /// </summary>
+    [Parameter] public string? MaxHeight { get; set; }
+
+    /// <summary>
+    /// 是否使用全高度
+    /// </summary>
+    [Parameter] public bool FullHeight { get; set; } = false;
+
+    /// <summary>
+    /// 是否自动应用语法高亮
+    /// </summary>
+    [Parameter] public bool AutoApplyHighlight { get; set; } = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // 如果是代码文件且开启了自动高亮，应用语法高亮
+        if (PreviewType == FilePreviewType.Code && AutoApplyHighlight && !string.IsNullOrEmpty(FileContent))
+        {
+            await Task.Delay(50);
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("applyCodeHighlight");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"应用语法高亮失败: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 根据文件扩展名确定预览类型
+    /// </summary>
+    public static FilePreviewType GetPreviewTypeFromExtension(string extension)
+    {
+        extension = extension?.ToLower() ?? "";
+
+        // 图片文件
+        if (new[] { ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".bmp" }.Contains(extension))
+        {
+            return FilePreviewType.Image;
+        }
+
+        // HTML 文件
+        if (new[] { ".html", ".htm" }.Contains(extension))
+        {
+            return FilePreviewType.Html;
+        }
+
+        // PDF 文件
+        if (extension == ".pdf")
+        {
+            return FilePreviewType.Pdf;
+        }
+
+        // Office 文档
+        if (IsOfficeDocument(extension))
+        {
+            return FilePreviewType.Office;
+        }
+
+        // 代码文件
+        var language = GetLanguageFromExtension(extension);
+        if (language != "plaintext")
+        {
+            return FilePreviewType.Code;
+        }
+
+        // 纯文本文件
+        if (new[] { ".txt", ".log", ".md", ".gitignore", ".env" }.Contains(extension))
+        {
+            return FilePreviewType.Text;
+        }
+
+        return FilePreviewType.Unknown;
+    }
+
+    /// <summary>
+    /// 根据文件扩展名获取编程语言
+    /// </summary>
+    public static string GetLanguageFromExtension(string extension)
+    {
+        return extension?.ToLower() switch
+        {
+            ".html" or ".htm" => "html",
+            ".css" => "css",
+            ".js" => "javascript",
+            ".ts" => "typescript",
+            ".jsx" => "jsx",
+            ".tsx" => "tsx",
+            ".json" => "json",
+            ".xml" => "xml",
+            ".cs" => "csharp",
+            ".java" => "java",
+            ".py" => "python",
+            ".rb" => "ruby",
+            ".php" => "php",
+            ".go" => "go",
+            ".rs" => "rust",
+            ".sql" => "sql",
+            ".sh" or ".bash" => "bash",
+            ".ps1" => "powershell",
+            ".yaml" or ".yml" => "yaml",
+            ".md" or ".markdown" => "markdown",
+            ".vue" => "markup",
+            ".razor" => "cshtml",
+            ".cpp" or ".cc" or ".cxx" => "cpp",
+            ".c" => "c",
+            ".h" or ".hpp" => "cpp",
+            ".swift" => "swift",
+            ".kt" or ".kts" => "kotlin",
+            ".dart" => "dart",
+            ".r" => "r",
+            ".scala" => "scala",
+            ".dockerfile" => "docker",
+            ".csproj" or ".sln" or ".props" or ".targets" => "xml",
+            ".config" or ".ini" => "ini",
+            ".toml" => "toml",
+            ".gradle" => "gradle",
+            ".properties" => "properties",
+            _ => "plaintext"
+        };
+    }
+
+    /// <summary>
+    /// 格式化 JSON 内容
+    /// </summary>
+    public static string FormatJsonContent(string jsonContent)
+    {
+        if (string.IsNullOrEmpty(jsonContent)) return jsonContent;
+
+        try
+        {
+            using var jsonDoc = JsonDocument.Parse(jsonContent);
+            return JsonSerializer.Serialize(jsonDoc, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            });
+        }
+        catch
+        {
+            // 如果解析失败，返回原内容
+            return jsonContent;
+        }
+    }
+
+    /// <summary>
+    /// 判断是否为 Office 文档
+    /// </summary>
+    public static bool IsOfficeDocument(string extension)
+    {
+        var officeExtensions = new[]
+        {
+            // Word
+            ".doc", ".docx", ".docm", ".dotx", ".dotm", ".odt",
+            // Excel
+            ".xls", ".xlsx", ".xlsm", ".xlsb", ".xltx", ".xltm", ".csv", ".ods",
+            // PowerPoint
+            ".ppt", ".pptx", ".pptm", ".potx", ".potm", ".ppsx", ".ppsm", ".odp"
+        };
+
+        return officeExtensions.Contains(extension?.ToLower() ?? "");
+    }
+
+    /// <summary>
+    /// 获取 Office 文档类型名称
+    /// </summary>
+    public static string GetOfficeTypeName(string extension)
+    {
+        return extension?.ToLower() switch
+        {
+            ".doc" or ".docx" => "Word 文档",
+            ".docm" => "Word 宏文档",
+            ".dotx" or ".dotm" => "Word 模板",
+            ".odt" => "OpenDocument 文本",
+            
+            ".xls" or ".xlsx" => "Excel 电子表格",
+            ".xlsm" => "Excel 宏工作簿",
+            ".xlsb" => "Excel 二进制工作簿",
+            ".xltx" or ".xltm" => "Excel 模板",
+            ".csv" => "CSV 数据文件",
+            ".ods" => "OpenDocument 电子表格",
+            
+            ".ppt" or ".pptx" => "PowerPoint 演示文稿",
+            ".pptm" => "PowerPoint 宏演示文稿",
+            ".potx" or ".potm" => "PowerPoint 模板",
+            ".ppsx" or ".ppsm" => "PowerPoint 放映",
+            ".odp" => "OpenDocument 演示文稿",
+            
+            _ => "Office 文档"
+        };
+    }
+
+    /// <summary>
+    /// 生成 Office 在线预览 URL
+    /// </summary>
+    /// <param name="fileUrl">文件的公开访问 URL</param>
+    /// <param name="baseUrl">应用基础 URL（用于检测是否为本地环境）</param>
+    /// <returns>预览 URL 或错误信息</returns>
+    public static (string previewUrl, string errorMessage) GenerateOfficePreviewUrl(string fileUrl, string baseUrl)
+    {
+        try
+        {
+            // 检查是否为 localhost/本地环境
+            var uri = new Uri(baseUrl);
+            var isLocalhost = uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host.StartsWith("192.168.");
+            
+            if (isLocalhost)
+            {
+                return ("", "Office在线预览需要公网可访问的URL。\n\n当前为本地开发环境，请下载文件后使用本地Office应用打开。\n\n如需在线预览，请将应用部署到公网服务器。");
+            }
+
+            // 构建 Office Online 预览 URL
+            var encodedFileUrl = Uri.EscapeDataString(fileUrl);
+            var previewUrl = $"https://view.officeapps.live.com/op/view.aspx?src={encodedFileUrl}";
+            
+            return (previewUrl, "");
+        }
+        catch (Exception ex)
+        {
+            return ("", $"初始化预览失败: {ex.Message}");
+        }
+    }
+}

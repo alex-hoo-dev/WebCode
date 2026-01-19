@@ -121,6 +121,12 @@ public class SessionShare
     /// </summary>
     [SugarColumn(IsNullable = true)]
     public DateTime? SessionUpdatedAt { get; set; }
+    
+    /// <summary>
+    /// 输出事件 (JSON格式，存储JSONL事件列表)
+    /// </summary>
+    [SugarColumn(ColumnDataType = "TEXT", IsNullable = true)]
+    public string? OutputEventsJson { get; set; }
 }
 
 /// <summary>
@@ -177,6 +183,11 @@ public class CreateShareRequest
     /// 会话更新时间
     /// </summary>
     public DateTime? SessionUpdatedAt { get; set; }
+    
+    /// <summary>
+    /// 输出事件 (JSON格式，存储JSONL事件列表)
+    /// </summary>
+    public string? OutputEventsJson { get; set; }
 }
 
 /// <summary>
@@ -321,4 +332,45 @@ public class SharedSessionData
     /// 工作区是否有效
     /// </summary>
     public bool IsWorkspaceValid { get; set; }
+    
+    /// <summary>
+    /// 输出事件 (JSON格式，存储JSONL事件列表)
+    /// </summary>
+    public string? OutputEventsJson { get; set; }
+}
+
+/// <summary>
+/// 更新分享快照请求DTO
+/// </summary>
+public class UpdateShareSnapshotRequest
+{
+    /// <summary>
+    /// 会话标题
+    /// </summary>
+    public string? SessionTitle { get; set; }
+    
+    /// <summary>
+    /// 使用的工具ID
+    /// </summary>
+    public string? ToolId { get; set; }
+    
+    /// <summary>
+    /// 工作区路径
+    /// </summary>
+    public string? WorkspacePath { get; set; }
+    
+    /// <summary>
+    /// 会话消息 (JSON格式)
+    /// </summary>
+    public string? MessagesJson { get; set; }
+    
+    /// <summary>
+    /// 会话更新时间
+    /// </summary>
+    public DateTime? SessionUpdatedAt { get; set; }
+    
+    /// <summary>
+    /// 输出事件 (JSON格式，存储JSONL事件列表)
+    /// </summary>
+    public string? OutputEventsJson { get; set; }
 }

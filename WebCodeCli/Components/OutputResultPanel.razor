@@ -1,0 +1,410 @@
+@namespace WebCodeCli.Components
+@using WebCodeCli.Domain.Domain.Model
+@using Markdig
+@inject IJSRuntime JSRuntime
+
+<div class="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 h-full flex flex-col overflow-hidden">
+    <div id="@ContainerId" class="flex-1 overflow-auto p-3 sm:p-4 lg:p-5" style="contain: layout style paint; content-visibility: auto;">
+        @if (HasOutputEvents)
+        {
+            <div class="space-y-4">
+                <!-- 显示加载状态 -->
+                @if (TotalEventCount > InitialDisplayCount)
+                {
+                    <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-4 py-2 text-xs flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>已加载 @DisplayedEventCount / @TotalEventCount 条消息</span>
+                    </div>
+                }
+                
+                @if (!string.IsNullOrEmpty(ActiveThreadId))
+                {
+                    <div class="border border-gray-300 bg-gray-50 text-gray-800 rounded-lg px-4 py-3 shadow-sm">
+                        <div class="text-xs uppercase tracking-wide font-semibold text-gray-700">当前线程</div>
+                        <div class="font-mono text-sm mt-1 break-words">@ActiveThreadId</div>
+                    </div>
+                }
+
+                <!-- 加载更多按钮 -->
+                @if (HasMoreEvents && !IsLoading)
+                {
+                    <div class="flex justify-center py-3">
+                        <button @onclick="OnLoadMoreEvents"
+                                class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all flex items-center gap-2 shadow-sm hover:shadow">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            <span>加载更多 (剩余 @(TotalEventCount - DisplayedEventCount) 条)</span>
+                        </button>
+                    </div>
+                }
+
+                @foreach (var group in EventGroups)
+                {
+                    if (!group.IsCollapsible)
+                    {
+                        var evt = group.Items[0];
+                        var containerAccent = GetEventContainerAccent(evt);
+                        var badgeClass = GetEventBadgeClass(evt);
+                        var badgeLabel = GetEventBadgeLabel(evt);
+
+                        <div @key="@group.Id" class="@($"border border-gray-200 rounded-xl p-4 sm:p-5 shadow-md hover:shadow-lg transition-all {containerAccent}")">
+                            <div class="flex items-center justify-between gap-3 mb-3">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="@($"text-xs font-bold px-2.5 py-1 rounded-full {badgeClass} shadow-sm")">@badgeLabel</span>
+                                    <span class="text-sm font-semibold text-gray-800">@GetEventDisplayTitle(evt)</span>
+                                </div>
+                                <span class="text-xs text-gray-500 font-medium">@evt.Type</span>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-700 markdown-preview leading-relaxed">
+                                @if (evt.ItemType == "todo_list")
+                                {
+                                    @* 待办列表使用预格式化显示，确保换行 *@
+                                    <div style="white-space: pre-line;">@evt.Content</div>
+                                }
+                                else
+                                {
+                                    @((MarkupString)RenderMarkdown(evt.Content))
+                                }
+                            </div>
+                            @if (evt.Usage != null)
+                            {
+                                <div class="mt-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+                                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Token 使用情况</div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                        <div class="flex flex-col space-y-1">
+                                            <span class="font-semibold text-gray-500">输入</span>
+                                            <span class="font-mono text-base font-bold text-gray-900">@FormatTokenValue(evt.Usage.InputTokens)</span>
+                                        </div>
+                                        <div class="flex flex-col space-y-1">
+                                            <span class="font-semibold text-gray-500">缓存输入</span>
+                                            <span class="font-mono text-base font-bold text-gray-900">@FormatTokenValue(evt.Usage.CachedInputTokens)</span>
+                                        </div>
+                                        <div class="flex flex-col space-y-1">
+                                            <span class="font-semibold text-gray-500">输出</span>
+                                            <span class="font-mono text-base font-bold text-gray-900">@FormatTokenValue(evt.Usage.OutputTokens)</span>
+                                        </div>
+                                        <div class="flex flex-col space-y-1">
+                                            <span class="font-semibold text-gray-500">总计</span>
+                                            <span class="font-mono text-base font-bold text-blue-600">@FormatTokenValue(evt.Usage.TotalTokens)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        var isOpen = IsGroupOpen(group);
+                        var defaultOpen = !group.IsCompleted;
+                        var statusText = group.IsCompleted ? "已完成" : "进行中";
+                        var statusClass = group.IsCompleted ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700";
+                        
+                        var isCommand = group.Kind == "command_execution";
+                        
+                        // Unified container style
+                        var containerClass = "border border-gray-200 rounded-xl shadow-sm hover:shadow overflow-hidden bg-white my-3 transition-all";
+                        
+                        // Unified header style
+                        var headerClass = "w-full px-4 py-3 bg-slate-50 hover:bg-slate-100 transition-colors flex items-center justify-between gap-3 text-left border-b border-gray-100 group";
+
+                        <div @key="group.Id" class="@containerClass">
+                            <button type="button"
+                                    class="@headerClass"
+                                    @onclick="() => OnToggleGroup(group.Id, defaultOpen)">
+                                <div class="min-w-0 flex items-center gap-3 flex-1">
+                                    <!-- Icon -->
+                                    <div class="flex-shrink-0">
+                                        @if (isCommand)
+                                        {
+                                            <div class="w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-gray-600 group-hover:bg-gray-300 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                </svg>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-200 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                </svg>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <div class="flex flex-col min-w-0 flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="@($"text-sm font-semibold truncate {(isCommand ? "font-mono text-gray-700" : "text-gray-800")}")">@group.Title</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-0.5">
+                                            <span class="@($"text-[10px] px-1.5 py-px rounded border {statusClass}")">@statusText</span>
+                                            @if (!group.IsCompleted) {
+                                                <span class="relative flex h-2 w-2">
+                                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3 flex-shrink-0 border-l border-gray-200 pl-3">
+                                    <div class="text-right hidden sm:block">
+                                        <div class="text-[10px] text-gray-400">Events</div>
+                                        <div class="text-xs font-mono font-medium text-gray-600">@group.Items.Count</div>
+                                    </div>
+                                    <svg class="@($"w-5 h-5 text-gray-400 transform transition-transform duration-200 {(isOpen ? "rotate-180" : "")}")"
+                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </button>
+
+                            @if (isOpen)
+                            {
+                                <div class="p-3 space-y-2 bg-white">
+                                    @foreach (var evt in group.Items)
+                                    {
+                                        var badgeClass = GetEventBadgeClass(evt);
+                                        var badgeLabel = GetEventBadgeLabel(evt);
+                                        var containerAccent = GetEventContainerAccent(evt);
+
+                                        <div class="@($"border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm hover:shadow-md transition-all {containerAccent}")">
+                                            <div class="flex items-center justify-between gap-3 mb-3">
+                                                <div class="flex items-center gap-2.5 min-w-0">
+                                                    <span class="@($"text-xs font-bold px-2.5 py-1 rounded-full {badgeClass} shadow-sm")">@badgeLabel</span>
+                                                    <span class="text-sm font-semibold text-gray-800 truncate">@GetEventDisplayTitle(evt)</span>
+                                                </div>
+                                                <span class="text-xs text-gray-500 font-medium flex-shrink-0">@evt.Type</span>
+                                            </div>
+                                            <div class="text-sm text-gray-700 markdown-preview leading-relaxed break-words">
+                                                @if (evt.ItemType == "todo_list")
+                                                {
+                                                    @* 待办列表使用预格式化显示，确保换行 *@
+                                                    <div style="white-space: pre-line;">@evt.Content</div>
+                                                }
+                                                else
+                                                {
+                                                    @((MarkupString)RenderMarkdown(evt.Content))
+                                                }
+                                            </div>
+                                            @if (evt.Usage != null)
+                                            {
+                                                <div class="mt-4 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+                                                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Token 使用情况</div>
+                                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                                        <div class="flex flex-col space-y-1">
+                                                            <span class="font-semibold text-gray-500">输入</span>
+                                                            <span class="font-mono text-base font-bold text-gray-900">@FormatTokenValue(evt.Usage.InputTokens)</span>
+                                                        </div>
+                                                        <div class="flex flex-col space-y-1">
+                                                            <span class="font-semibold text-gray-500">缓存输入</span>
+                                                            <span class="font-mono text-base font-bold text-gray-900">@FormatTokenValue(evt.Usage.CachedInputTokens)</span>
+                                                        </div>
+                                                        <div class="flex flex-col space-y-1">
+                                                            <span class="font-semibold text-gray-500">输出</span>
+                                                            <span class="font-mono text-base font-bold text-gray-900">@FormatTokenValue(evt.Usage.OutputTokens)</span>
+                                                        </div>
+                                                        <div class="flex flex-col space-y-1">
+                                                            <span class="font-semibold text-gray-500">总计</span>
+                                                            <span class="font-mono text-base font-bold text-blue-600">@FormatTokenValue(evt.Usage.TotalTokens)</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(RawOutput))
+        {
+            <div class="markdown-preview text-xs sm:text-sm leading-relaxed p-2 sm:p-3 lg:p-4 bg-white border border-gray-200 rounded" style="min-height: 100%;">
+                @((MarkupString)RenderMarkdown(RawOutput))
+            </div>
+        }
+        else
+        {
+            <div class="flex-1 flex items-center justify-center h-full">
+                <div class="text-center text-gray-400">
+                    <div class="w-20 h-20 bg-gray-100 border border-gray-200 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md">
+                        <svg class="w-10 h-10 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-base font-semibold text-gray-600">暂无输出结果</p>
+                    <p class="text-sm mt-2 text-gray-500">开始对话后这里将显示输出内容</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    // 参数
+    [Parameter] public string ContainerId { get; set; } = "output-container";
+    [Parameter] public bool HasOutputEvents { get; set; }
+    [Parameter] public int TotalEventCount { get; set; }
+    [Parameter] public int DisplayedEventCount { get; set; }
+    [Parameter] public int InitialDisplayCount { get; set; } = 50;
+    [Parameter] public string? ActiveThreadId { get; set; }
+    [Parameter] public bool HasMoreEvents { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public List<OutputEventGroup> EventGroups { get; set; } = new();
+    [Parameter] public string RawOutput { get; set; } = "";
+    [Parameter] public EventCallback OnLoadMore { get; set; }
+    [Parameter] public EventCallback<(string groupId, bool defaultOpen)> OnToggleGroupCallback { get; set; }
+    [Parameter] public Func<OutputEventGroup, bool> IsGroupOpenFunc { get; set; } = _ => false;
+
+    // Markdown 渲染管道
+    private readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder()
+        .UseAdvancedExtensions()
+        .Build();
+
+    private async Task OnLoadMoreEvents()
+    {
+        if (OnLoadMore.HasDelegate)
+        {
+            await OnLoadMore.InvokeAsync();
+        }
+    }
+
+    private async Task OnToggleGroup(string groupId, bool defaultOpen)
+    {
+        if (OnToggleGroupCallback.HasDelegate)
+        {
+            await OnToggleGroupCallback.InvokeAsync((groupId, defaultOpen));
+        }
+    }
+
+    private bool IsGroupOpen(OutputEventGroup group)
+    {
+        return IsGroupOpenFunc?.Invoke(group) ?? false;
+    }
+
+    private string RenderMarkdown(string markdown)
+    {
+        if (string.IsNullOrEmpty(markdown)) return "";
+        try
+        {
+            return Markdown.ToHtml(markdown, _markdownPipeline);
+        }
+        catch
+        {
+            return System.Web.HttpUtility.HtmlEncode(markdown);
+        }
+    }
+
+    private string GetEventBadgeClass(OutputEvent evt)
+    {
+        // Category Mappings
+        var isTodo = evt.ItemType == "todo_list";
+        var isThinking = evt.ItemType == "reasoning" || evt.Type == "thinking";
+        var isMessage = evt.ItemType == "agent_message" || evt.Type == "message" || evt.Type == "assistant" || evt.Type == "assistant:message" || evt.Type == "text";
+        var isError = evt.Type == "error" || evt.Type == "turn.failed";
+        var isTool = evt.Type.StartsWith("tool_");
+        var isUser = evt.Type == "user";
+        var isSuccess = evt.Type.Contains("completed") || evt.Type == "result" || evt.Type == "session_end" || evt.Type == "step_finish";
+        
+        if (isTodo) return "bg-violet-100 text-violet-800";
+        if (isThinking) return "bg-amber-100 text-amber-800 border border-amber-200";
+        if (isMessage) return "bg-white border border-gray-200 text-gray-700";
+        if (isError) return "bg-rose-100 text-rose-800 border border-rose-200";
+        if (isTool) return "bg-slate-100 text-slate-600 font-mono text-xs";
+        if (isUser) return "bg-indigo-50 text-indigo-700 border border-indigo-100";
+        if (isSuccess) return "bg-emerald-50 text-emerald-700 border border-emerald-100";
+        
+        // Default System/Other
+        return "bg-gray-50 text-gray-600 border border-gray-100";
+    }
+
+    private string GetEventBadgeLabel(OutputEvent evt)
+    {
+        if (evt.ItemType == "todo_list") return "待办";
+        if (evt.ItemType == "reasoning") return "推理";
+        if (evt.ItemType == "agent_message") return "回复";
+
+        return evt.Type switch
+        {
+            "thread.started" => "线程",
+            "turn.started" => "开始",
+            "turn.completed" => "完成",
+            "turn.failed" => "失败",
+            "item.started" => "开始",
+            "item.updated" => "更新",
+            "error" => "错误",
+            "init" => "初始化",
+            "message" or "assistant" or "assistant:message" => "回复",
+            "tool_use" => "工具调用",
+            "tool_result" => "工具结果",
+            "result" => "结果",
+            "system" => "系统",
+            "user" => "输入",
+            "raw" => "输出",
+            "session_start" => "会话开始",
+            "step_start" => "步骤开始",
+            "step_finish" => "完成",
+            "text" => "回复",
+            "tool_start" => "工具调用",
+            "tool_finish" => "工具结果",
+            "session_end" or "complete" => "结果",
+            "code" => "代码Fragment",
+            "thinking" => "思考",
+            "thread.completed" => "线程完成",
+            "item.completed" => "节点完成",
+            _ => evt.Type
+        };
+    }
+
+    private string GetEventContainerAccent(OutputEvent evt)
+    {
+        var isTodo = evt.ItemType == "todo_list";
+        var isThinking = evt.ItemType == "reasoning" || evt.Type == "thinking";
+        var isMessage = evt.ItemType == "agent_message" || evt.Type == "message" || evt.Type == "assistant" || evt.Type == "assistant:message" || evt.Type == "text";
+        var isError = evt.Type == "error" || evt.Type == "turn.failed";
+        var isTool = evt.Type.StartsWith("tool_");
+        var isUser = evt.Type == "user";
+        var isSuccess = evt.Type.Contains("completed") || evt.Type == "result" || evt.Type == "session_end" || evt.Type == "step_finish";
+
+        if (isTodo) return "border-l-4 border-violet-500 bg-violet-50/20";
+        if (isThinking) return "border-l-4 border-amber-400 bg-amber-50/20";
+        if (isMessage) return "border-l-4 border-slate-400 bg-white";
+        if (isError) return "border-l-4 border-rose-500 bg-rose-50/20";
+        if (isTool) return "border-l-4 border-slate-300 bg-slate-50/30";
+        if (isUser) return "border-l-4 border-indigo-500 bg-indigo-50/20";
+        if (isSuccess) return "border-l-4 border-emerald-500 bg-emerald-50/20";
+        
+        return "border-l-4 border-gray-200 bg-white";
+    }
+
+    private string GetEventDisplayTitle(OutputEvent evt)
+    {
+        if (!string.IsNullOrEmpty(evt.Title))
+            return evt.Title;
+
+        return evt.Type switch
+        {
+            "text" => "响应内容",
+            "code" => "代码片段",
+            "tool_use" => evt.Name ?? "工具调用",
+            "tool_result" => "执行结果",
+            "thinking" => "AI 思考过程",
+            "error" => "错误信息",
+            _ => "输出事件"
+        };
+    }
+
+    private string FormatTokenValue(int? value)
+    {
+        if (!value.HasValue || value == 0) return "0";
+        return value.Value.ToString("N0");
+    }
+}

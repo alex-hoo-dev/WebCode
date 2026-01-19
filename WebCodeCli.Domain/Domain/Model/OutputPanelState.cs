@@ -47,3 +47,39 @@ public class OutputJsonlUsageDetail
     public long? CachedInputTokens { get; set; }
     public long? OutputTokens { get; set; }
 }
+/// <summary>
+/// 输出事件组（用于 OutputResultPanel 组件）
+/// </summary>
+public class OutputEventGroup
+{
+    public string Id { get; set; } = string.Empty;
+    public string Kind { get; set; } = string.Empty; // "command_execution" | "tool_call" | "single"
+    public string Title { get; set; } = string.Empty;
+    public bool IsCompleted { get; set; }
+    public bool IsCollapsible { get; set; }
+    public List<OutputEvent> Items { get; set; } = new();
+}
+
+/// <summary>
+/// 输出事件（用于 OutputResultPanel 组件）
+/// </summary>
+public class OutputEvent
+{
+    public string Type { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public string? Name { get; set; }
+    public string? ItemType { get; set; }
+    public TokenUsage? Usage { get; set; }
+}
+
+/// <summary>
+/// Token 使用情况
+/// </summary>
+public class TokenUsage
+{
+    public int? InputTokens { get; set; }
+    public int? CachedInputTokens { get; set; }
+    public int? OutputTokens { get; set; }
+    public int? TotalTokens { get; set; }
+}
