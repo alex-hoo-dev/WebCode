@@ -49,6 +49,16 @@ public interface ISystemSettingsService
     /// 更新管理员凭据
     /// </summary>
     Task<bool> UpdateAdminCredentialsAsync(string username, string password);
+
+    /// <summary>
+    /// 获取启用的助手列表
+    /// </summary>
+    Task<List<string>> GetEnabledAssistantsAsync();
+
+    /// <summary>
+    /// 保存启用的助手列表
+    /// </summary>
+    Task<bool> SaveEnabledAssistantsAsync(List<string> assistants);
 }
 
 /// <summary>
@@ -75,6 +85,11 @@ public class SystemInitConfig
     /// 工作区根目录（留空则使用默认值）
     /// </summary>
     public string? WorkspaceRoot { get; set; }
+
+    /// <summary>
+    /// 启用的助手列表（claude-code, codex, opencode）
+    /// </summary>
+    public List<string> EnabledAssistants { get; set; } = new();
 
     /// <summary>
     /// Claude Code 环境变量
@@ -131,6 +146,11 @@ public class SystemConfigSummary
     /// OpenCode 是否已配置
     /// </summary>
     public bool OpenCodeConfigured { get; set; }
+
+    /// <summary>
+    /// 启用的助手列表
+    /// </summary>
+    public List<string> EnabledAssistants { get; set; } = new();
 }
 
 /// <summary>
@@ -234,7 +254,15 @@ public class SystemSettingsService : ISystemSettingsService
                 _logger.LogInformation("已保存 OpenCode 环境变量配置");
             }
 
-            // 7. 标记系统已初始化
+            // 7. 保存启用的助手列表
+            if (config.EnabledAssistants.Any())
+            {
+                var enabledAssistantsJson = JsonSerializer.Serialize(config.EnabledAssistants);
+                await _repository.SetAsync(SystemSettingsKeys.EnabledAssistants, enabledAssistantsJson, "启用的助手列表");
+                _logger.LogInformation("已保存启用的助手列表: {Assistants}", string.Join(", ", config.EnabledAssistants));
+            }
+
+            // 8. 标记系统已初始化
             await _repository.SetBoolAsync(SystemSettingsKeys.SystemInitialized, true, "系统已完成初始化");
 
             _logger.LogInformation("系统初始化配置完成");
@@ -321,6 +349,20 @@ public class SystemSettingsService : ISystemSettingsService
         var openCodeEnvVars = await _envRepository.GetEnvironmentVariablesByToolIdAsync("opencode");
         summary.OpenCodeConfigured = openCodeEnvVars.Any();
 
+        // 获取启用的助手列表
+        var enabledAssistantsJson = await _repository.GetAsync(SystemSettingsKeys.EnabledAssistants);
+        if (!string.IsNullOrWhiteSpace(enabledAssistantsJson))
+        {
+            try
+            {
+                summary.EnabledAssistants = JsonSerializer.Deserialize<List<string>>(enabledAssistantsJson) ?? new List<string>();
+            }
+            catch
+            {
+                summary.EnabledAssistants = new List<string>();
+            }
+        }
+
         return summary;
     }
 
@@ -370,6 +412,44 @@ public class SystemSettingsService : ISystemSettingsService
         catch (Exception ex)
         {
             _logger.LogError(ex, "更新管理员凭据失败");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 获取启用的助手列表
+    /// </summary>
+    public async Task<List<string>> GetEnabledAssistantsAsync()
+    {
+        try
+        {
+            var enabledAssistantsJson = await _repository.GetAsync(SystemSettingsKeys.EnabledAssistants);
+            if (!string.IsNullOrWhiteSpace(enabledAssistantsJson))
+            {
+                return JsonSerializer.Deserialize<List<string>>(enabledAssistantsJson) ?? new List<string>();
+            }
+            return new List<string>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "获取启用的助手列表失败");
+            return new List<string>();
+        }
+    }
+
+    /// <summary>
+    /// 保存启用的助手列表
+    /// </summary>
+    public async Task<bool> SaveEnabledAssistantsAsync(List<string> assistants)
+    {
+        try
+        {
+            var enabledAssistantsJson = JsonSerializer.Serialize(assistants);
+            return await _repository.SetAsync(SystemSettingsKeys.EnabledAssistants, enabledAssistantsJson, "启用的助手列表");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "保存启用的助手列表失败");
             return false;
         }
     }

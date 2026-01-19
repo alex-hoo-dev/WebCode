@@ -38,12 +38,15 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
     [Inject] private IDevServerManager DevServerManager { get; set; } = default!;
     [Inject] private WebCodeCli.Domain.Domain.Service.ISkillService SkillService { get; set; } = default!;
     [Inject] private ILocalizationService L { get; set; } = default!;
+    [Inject] private ISystemSettingsService SystemSettingsService { get; set; } = default!;
     
     // 本地化翻译缓存
     private Dictionary<string, string> _translations = new();
     private string _currentLanguage = "zh-CN";
     
     private List<CliToolConfig> _availableTools = new();
+    private List<CliToolConfig> _allTools = new();
+    private List<string> _enabledAssistants = new();
     private string _selectedToolId = string.Empty;
     private List<ChatMessage> _messages = new();
     private string _inputMessage = string.Empty;
@@ -392,17 +395,44 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
     {
         try
         {
-            // 直接调用服务，不通过 HTTP
-            _availableTools = CliExecutorService.GetAvailableTools();
+            // 获取所有可用的 CLI 工具
+            _allTools = CliExecutorService.GetAvailableTools();
+            
+            // 获取启用的助手列表
+            _enabledAssistants = await SystemSettingsService.GetEnabledAssistantsAsync();
+            
+            // 根据启用的助手过滤工具
+            if (_enabledAssistants.Any())
+            {
+                _availableTools = _allTools.Where(tool => 
+                    _enabledAssistants.Any(assistant => 
+                        tool.Id.Contains(assistant.Replace("-", ""), StringComparison.OrdinalIgnoreCase) ||
+                        tool.Id.Equals(assistant, StringComparison.OrdinalIgnoreCase) ||
+                        (assistant == "claude-code" && tool.Id.Contains("claude", StringComparison.OrdinalIgnoreCase)) ||
+                        (assistant == "codex" && tool.Id.Contains("codex", StringComparison.OrdinalIgnoreCase)) ||
+                        (assistant == "opencode" && tool.Id.Contains("opencode", StringComparison.OrdinalIgnoreCase))
+                    )).ToList();
+            }
+            else
+            {
+                // 如果没有配置任何助手，显示所有工具（兼容旧配置）
+                _availableTools = _allTools;
+            }
+            
             if (_availableTools.Any())
             {
                 _selectedToolId = _availableTools.First().Id;
             }
-            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"加载 CLI 工具列表失败: {ex.Message}");
+            // 出错时显示所有工具
+            _availableTools = _allTools;
+            if (_availableTools.Any() && string.IsNullOrEmpty(_selectedToolId))
+            {
+                _selectedToolId = _availableTools.First().Id;
+            }
         }
     }
 
@@ -3739,10 +3769,16 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
             _currentSession = session;
             _messages = new List<ChatMessage>(session.Messages);
             
-            // 恢复 CLI 工具选择
-            if (!string.IsNullOrEmpty(session.ToolId))
+            // 恢复 CLI 工具选择（只有当工具在可用列表中时才恢复）
+            if (!string.IsNullOrEmpty(session.ToolId) && 
+                _availableTools.Any(t => t.Id == session.ToolId))
             {
                 _selectedToolId = session.ToolId;
+            }
+            else if (_availableTools.Any() && string.IsNullOrEmpty(_selectedToolId))
+            {
+                // 如果会话的工具不可用或未选择，默认选择第一个可用工具
+                _selectedToolId = _availableTools.First().Id;
             }
             
             // 清空输出区域和其他会话状态

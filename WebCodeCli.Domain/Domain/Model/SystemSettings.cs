@@ -78,4 +78,9 @@ public static class SystemSettingsKeys
     /// Codex 环境变量
     /// </summary>
     public const string CodexEnvVars = "codex_env_vars";
+
+    /// <summary>
+    /// 启用的助手列表（JSON数组格式）
+    /// </summary>
+    public const string EnabledAssistants = "enabled_assistants";
 }

@@ -11,10 +11,16 @@ public partial class Setup : ComponentBase
     [Inject] private ILocalizationService L { get; set; } = default!;
 
     private int _currentStep = 1;
+    private int _currentAssistantIndex = 0;
     private bool _isLoading = false;
     private bool _isCompleted = false;
     private string _errorMessage = string.Empty;
     private string _defaultWorkspaceRoot = string.Empty;
+
+    // 助手选择状态
+    private bool _enableClaudeCode = false;
+    private bool _enableCodex = false;
+    private bool _enableOpenCode = false;
 
     // 本地化相关
     private Dictionary<string, string> _translations = new();
@@ -24,12 +30,14 @@ public partial class Setup : ComponentBase
     {
         EnableAuth = true,
         AdminUsername = "admin",
-        AdminPassword = string.Empty
+        AdminPassword = string.Empty,
+        EnabledAssistants = new List<string>()
     };
 
     // 环境变量列表
     private List<EnvVarItem> _claudeEnvVars = new();
     private List<EnvVarItem> _codexEnvVars = new();
+    private List<EnvVarItem> _openCodeEnvVars = new();
 
     private class EnvVarItem
     {
@@ -140,23 +148,53 @@ public partial class Setup : ComponentBase
 
     private string GetStepClass(int step)
     {
-        if (step < _currentStep)
+        var displayStep = GetDisplayStep();
+        if (step < displayStep)
             return "w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center text-sm font-bold";
-        if (step == _currentStep)
+        if (step == displayStep)
             return "w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center text-sm font-bold ring-4 ring-gray-300";
         return "w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-sm font-bold";
     }
 
     private string GetStepTitle(int step)
     {
-        return step switch
+        if (step == 1)
         {
-            1 => T("setup.step1Title"),
-            2 => T("setup.step2Title"),
-            3 => T("setup.step3Title"),
-            4 => T("setup.step4Title"),
-            _ => ""
-        };
+            return T("setup.step1Title");
+        }
+        if (step == 2)
+        {
+            return T("setup.selectAssistants");
+        }
+        // 步骤3及以后，根据启用的助手动态生成标题
+        var enabledAssistants = GetEnabledAssistants();
+        var assistantIndex = step - 3;
+        if (assistantIndex >= 0 && assistantIndex < enabledAssistants.Count)
+        {
+            var assistant = enabledAssistants[assistantIndex];
+            return assistant switch
+            {
+                "claude-code" => T("setup.step2Title"),
+                "codex" => T("setup.step3Title"),
+                "opencode" => T("setup.step4Title"),
+                _ => ""
+            };
+        }
+        return "";
+    }
+
+    private int GetDisplayStep()
+    {
+        if (_currentStep <= 2) return _currentStep;
+        // 步骤3及以后，根据当前配置的助手索引计算
+        return 2 + _currentAssistantIndex + 1;
+    }
+
+    private int GetTotalSteps()
+    {
+        var enabledCount = GetEnabledAssistants().Count;
+        // 步骤1：基础设置 + 步骤2：选择助手 + 每个助手配置一个步骤
+        return 2 + enabledCount;
     }
 
     private void NextStep()
@@ -186,7 +224,7 @@ public partial class Setup : ComponentBase
             }
         }
 
-        if (_currentStep < 4)
+        if (_currentStep < 2)
         {
             _currentStep++;
             StateHasChanged();
@@ -198,28 +236,10 @@ public partial class Setup : ComponentBase
         if (_currentStep > 1)
         {
             _currentStep--;
+            _currentAssistantIndex = 0;
             _errorMessage = string.Empty;
             StateHasChanged();
         }
-    }
-
-    private void SkipStep()
-    {
-        if (_currentStep == 2)
-        {
-            _claudeEnvVars.Clear();
-        }
-        if (_currentStep == 3)
-        {
-            _codexEnvVars.Clear();
-        }
-        NextStep();
-    }
-
-    private async Task SkipAndComplete()
-    {
-        _openCodeEnvVars.Clear();
-        await CompleteSetup();
     }
 
     private async Task CompleteSetup()
@@ -230,18 +250,30 @@ public partial class Setup : ComponentBase
 
         try
         {
-            // 构建配置
-            _config.ClaudeCodeEnvVars = _claudeEnvVars
-                .Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value))
-                .ToDictionary(e => e.Key, e => e.Value);
+            // 设置启用的助手列表
+            _config.EnabledAssistants = GetEnabledAssistants();
 
-            _config.CodexEnvVars = _codexEnvVars
-                .Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value))
-                .ToDictionary(e => e.Key, e => e.Value);
+            // 构建配置 - 只保存启用的助手的环境变量
+            if (_enableClaudeCode)
+            {
+                _config.ClaudeCodeEnvVars = _claudeEnvVars
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value))
+                    .ToDictionary(e => e.Key, e => e.Value);
+            }
 
-            _config.OpenCodeEnvVars = _openCodeEnvVars
-                .Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value))
-                .ToDictionary(e => e.Key, e => e.Value);
+            if (_enableCodex)
+            {
+                _config.CodexEnvVars = _codexEnvVars
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value))
+                    .ToDictionary(e => e.Key, e => e.Value);
+            }
+
+            if (_enableOpenCode)
+            {
+                _config.OpenCodeEnvVars = _openCodeEnvVars
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Key) && !string.IsNullOrWhiteSpace(e.Value))
+                    .ToDictionary(e => e.Key, e => e.Value);
+            }
 
             // 保存配置
             var result = await SystemSettingsService.CompleteInitializationAsync(_config);
@@ -302,6 +334,29 @@ public partial class Setup : ComponentBase
     {
         _codexEnvVars.Remove(item);
         StateHasChanged();
+    }
+
+    // OpenCode 环境变量操作
+    private void AddOpenCodeEnvVar()
+    {
+        _openCodeEnvVars.Add(new EnvVarItem());
+        StateHasChanged();
+    }
+
+    private void RemoveOpenCodeEnvVar(EnvVarItem item)
+    {
+        _openCodeEnvVars.Remove(item);
+        StateHasChanged();
+    }
+
+    // 获取启用的助手列表
+    private List<string> GetEnabledAssistants()
+    {
+        var list = new List<string>();
+        if (_enableClaudeCode) list.Add("claude-code");
+        if (_enableCodex) list.Add("codex");
+        if (_enableOpenCode) list.Add("opencode");
+        return list;
     }
 
     // 获取环境变量的提示文本
