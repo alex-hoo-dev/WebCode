@@ -5,11 +5,11 @@
 </p>
 
 <p align="center">
-  <strong>🚀 Code Anywhere, Anytime | 随时随地，云端编程</strong>
+  <strong>🚀 Your AI Workspace, Anywhere | 随时随地，AI 工作助手</strong>
 </p>
 
 <p align="center">
-  <em>Remote AI Programming Assistant supporting full-platform coding experience on phones, tablets, and computers</em>
+  <em>Remote AI Assistant supporting coding, document processing, requirement analysis, report writing, and more across all platforms</em>
 </p>
 
 ---
@@ -38,15 +38,33 @@ Join our WeChat group to get the latest updates, report issues, and share your e
 
 ## ✨ Core Features
 
-WebCodeCli is an **online AI programming platform** that allows you to remotely control various AI CLI programming assistants through a web browser, enabling **true code anywhere, anytime** - whether you're on the subway, in a coffee shop, or lounging on the sofa, you can code as long as you have a browser!
+WebCodeCli is an **online AI-powered workspace platform** that allows you to remotely control various AI CLI assistants through a web browser, enabling **true work anywhere, anytime** - whether you're on the subway, in a coffee shop, or lounging on the sofa, you can code, write documents, analyze requirements, and more with just a browser!
 
 ### 🎯 Main Features
 
-- **📱 Mobile Programming** - Full mobile adaptation, touch optimized, smooth coding experience on phones
+#### 💻 Programming & Development
 - **🤖 Multiple AI Assistant Support** - Integration with mainstream AI programming tools like Claude Code CLI, Codex CLI, GitHub Copilot CLI, etc.
 - **⚡ Real-time Streaming Output** - Instantly see AI's thinking and coding process with typewriter effect
-- **📂 Session Workspace** - Each session has an independent working directory with file isolation for security
-- **🎨 Code Highlighting Preview** - Monaco Editor code highlighting, Markdown rendering, multi-view switching
+- **🎨 Code Highlighting Preview** - Monaco Editor with syntax highlighting for multiple languages
+
+#### 📄 Document Processing
+- **📝 Document Creation** - Generate and edit documents in Markdown, Word, PDF, and more
+- **🔄 Format Conversion** - Convert between different document formats seamlessly
+- **📊 Data Visualization** - Process tabular data and generate charts
+
+#### 🎯 Requirement Analysis
+- **📋 Requirements Documentation** - Auto-generate PRDs, user stories, and feature specifications
+- **🔍 Requirement Clarification** - AI-assisted requirement analysis and optimization suggestions
+- **📈 Priority Assessment** - Smart evaluation of requirement priorities and workload
+
+#### 📊 Report Writing
+- **📈 Project Reports** - Auto-generate project progress and summary reports
+- **📉 Data Analysis Reports** - Data insights and visualization reports
+- **💼 Business Documents** - Business plans, proposals, and more
+
+#### 🛠️ Universal Features
+- **📱 Cross-Platform Support** - Full mobile optimization, seamless experience across phones, tablets, and computers
+- **📂 Session Workspace** - Isolated working directories for each session, secure and reliable
 - **🔐 Secure Execution** - Sandbox environment, command whitelist, injection protection
 
 ## 🖥️ Supported AI CLI Tools
@@ -253,17 +271,29 @@ Excellent Skills resources to enhance AI programming assistant capabilities:
 
 ## 🔧 Use Cases
 
-### 1. Mobile Office
-Control AI programming assistants on the server remotely through a browser on your phone, handling code tasks anytime.
+### 💻 Programming & Development
+- **Mobile Coding** - Handle code tasks on your phone anytime, emergency bug fixes without limits
+- **Remote Development** - Drive AI assistants via browser, no local environment needed
+- **Code Review** - AI-assisted code review, test case generation, and refactoring
+- **Learning Programming** - Interactive learning with AI, instant feedback for beginners
 
-### 2. Remote Development
-Remotely drive Claude Code or Codex for code development through a web interface, no local development environment installation required.
+### 📄 Documentation Work
+- **Technical Documentation** - API docs, technical specs, system design documents
+- **Project Documentation** - Project plans, progress reports, summary documents
+- **User Manuals** - Product guides, operation manuals, FAQ documentation
+- **Internal Documentation** - Meeting minutes, work logs, knowledge base organization
 
-### 3. Code Review
-Use AI assistants to quickly review code, generate test cases, and refactor code.
+### 🎯 Product Management
+- **Requirement Analysis** - PRD writing, user story breakdown, priority assessment
+- **Feature Design** - Feature specifications, interaction design docs, prototype descriptions
+- **Project Planning** - Milestone planning, task decomposition, resource estimation
+- **Data Analysis** - User feedback analysis, data reports, trend insights
 
-### 4. Learning Programming
-Beginners can learn programming through AI assistants and get instant feedback and suggestions.
+### 💼 Business Office
+- **Business Documents** - Business plans, project proposals, partnership agreements
+- **Report Writing** - Work summaries, analysis reports, performance reviews
+- **Communication** - Email writing, announcements, training materials
+- **Creative Planning** - Marketing proposals, event planning, content creation
 
 ## 🛠️ Advanced Configuration
 
