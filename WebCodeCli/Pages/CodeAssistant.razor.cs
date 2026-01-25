@@ -2039,10 +2039,13 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
         try
         {
             var state = BuildOutputPanelStateSnapshot(sessionId);
-            await SessionOutputService.SaveAsync(state);
+            Console.WriteLine($"[SaveOutputState] 保存会话输出状态: {sessionId}, Events数量={state.JsonlEvents?.Count ?? 0}, RawOutput长度={state.RawOutput?.Length ?? 0}");
+            var result = await SessionOutputService.SaveAsync(state);
+            Console.WriteLine($"[SaveOutputState] 保存结果: {result}");
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[SaveOutputState] 保存失败: {ex.Message}");
             // 持久化失败不影响主流程
         }
     }
@@ -2056,11 +2059,15 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
 
         try
         {
+            Console.WriteLine($"[LoadOutputState] 开始加载会话输出状态: {sessionId}");
             var state = await SessionOutputService.GetBySessionIdAsync(sessionId);
             if (state == null)
             {
+                Console.WriteLine($"[LoadOutputState] 会话输出状态不存在: {sessionId}");
                 return;
             }
+
+            Console.WriteLine($"[LoadOutputState] 成功获取输出状态: RawOutput长度={state.RawOutput?.Length ?? 0}, IsJsonlActive={state.IsJsonlOutputActive}, Events数量={state.JsonlEvents?.Count ?? 0}");
 
             _rawOutput = state.RawOutput ?? string.Empty;
             _isJsonlOutputActive = state.IsJsonlOutputActive;
@@ -2092,12 +2099,15 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
                             }
                     });
                 }
+                Console.WriteLine($"[LoadOutputState] 已恢复 {_jsonlEvents.Count} 个事件");
             }
 
             StateHasChanged();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[LoadOutputState] 加载输出状态失败: {ex.Message}");
+            Console.WriteLine($"[LoadOutputState] 错误堆栈: {ex.StackTrace}");
             // 恢复失败不影响主流程
         }
     }

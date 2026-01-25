@@ -39,6 +39,18 @@ public class SessionOutputEntity
     public int DisplayedEventCount { get; set; } = 20;
     
     /// <summary>
+    /// 是否启用 JSONL 流式输出模式
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsJsonlOutputActive { get; set; } = false;
+    
+    /// <summary>
+    /// JSONL 模式下的当前 thread id
+    /// </summary>
+    [SugarColumn(Length = 128, IsNullable = true)]
+    public string? ActiveThreadId { get; set; }
+    
+    /// <summary>
     /// 更新时间
     /// </summary>
     [SugarColumn(IsNullable = false)]

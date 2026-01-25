@@ -45,6 +45,18 @@ public class SessionOutputRepository : Repository<SessionOutputEntity>, ISession
     public async Task<bool> SaveOrUpdateAsync(SessionOutputEntity entity)
     {
         entity.UpdatedAt = DateTime.Now;
-        return await InsertOrUpdateAsync(entity);
+        
+        // 先检查是否存在
+        var existing = await GetBySessionIdAsync(entity.SessionId);
+        if (existing != null)
+        {
+            // 更新现有记录
+            return await UpdateAsync(entity);
+        }
+        else
+        {
+            // 插入新记录
+            return await InsertAsync(entity);
+        }
     }
 }
