@@ -3857,7 +3857,7 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
             _jsonlAssistantMessageBuilder = null;
             _currentAssistantMessage = string.Empty;
 
-            // 从 IndexedDB 恢复输出结果区域（如果存在）
+            // 从数据库恢复输出结果区域（如果存在）
             await LoadOutputStateAsync(_sessionId);
             
             // 关闭会话列表（立即关闭以提升响应速度）
