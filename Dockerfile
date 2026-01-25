@@ -4,7 +4,7 @@
 # ============================================
 
 # 阶段1: 构建阶段
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.azure.cn/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # 安装 Node.js（使用官方源，国内网络已优化）
@@ -36,7 +36,7 @@ RUN dotnet publish "WebCodeCli.csproj" -c Release -o /app/publish /p:UseAppHost=
 # ============================================
 # 阶段2: 运行时镜像（包含 CLI 工具）
 # ============================================
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+FROM mcr.azure.cn/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 # 设置环境变量
