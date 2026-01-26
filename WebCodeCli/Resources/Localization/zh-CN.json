@@ -697,6 +697,8 @@
     "selectProjectDesc": "选择一个项目来初始化新会话的工作区，或选择\"空白会话\"从头开始。",
     "blankSession": "空白会话",
     "blankSessionDesc": "不使用项目，从空白工作区开始",
+    "includeGit": "保留 Git 信息（可在会话工作区直接提交）",
+    "includeGitHint": "不勾选将排除 .git，适合避免污染原项目历史",
     "noReadyProjects": "暂无可用项目",
     "noReadyProjectsHint": "请先创建并克隆项目",
     "cloneSuccess": "项目克隆成功",
