@@ -3220,6 +3220,13 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
         OpenEnvConfig();
     }
     
+    private async Task CheckForUpdateFromDropdown()
+    {
+        _showUserDropdown = false;
+        StateHasChanged();
+        await CheckForUpdate();
+    }
+    
     private async Task HandleLogoutFromDropdown()
     {
         _showUserDropdown = false;
