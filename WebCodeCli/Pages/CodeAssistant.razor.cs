@@ -4388,7 +4388,7 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"删除会话失败: {ex.Message}");
-            _sessionDeleteError = $"删除失败: {ex.Message}";
+            _sessionDeleteError = T("codeAssistant.sessionDeleteErrorFailed", ("error", ex.Message));
         }
         finally
         {
@@ -4640,7 +4640,7 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
             var newTitle = _newSessionTitle.Trim();
             if (string.IsNullOrWhiteSpace(newTitle))
             {
-                _renameError = "标题不能为空";
+                _renameError = T("codeAssistant.renameErrorEmptyTitle");
                 return;
             }
 
@@ -4648,7 +4648,7 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
             const int MaxTitleLength = 100;
             if (newTitle.Length > MaxTitleLength)
             {
-                _renameError = $"标题长度不能超过 {MaxTitleLength} 个字符";
+                _renameError = T("codeAssistant.renameErrorTooLong", ("max", MaxTitleLength.ToString()));
                 return;
             }
 
@@ -4676,7 +4676,7 @@ public partial class CodeAssistant : ComponentBase, IAsyncDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"重命名会话失败: {ex.Message}");
-            _renameError = $"重命名失败: {ex.Message}";
+            _renameError = T("codeAssistant.renameErrorFailed", ("error", ex.Message));
         }
         finally
         {
