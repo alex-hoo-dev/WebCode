@@ -259,6 +259,9 @@
 <!-- 更新提示模态框 -->
 <UpdateNotificationModal @ref="_updateNotificationModal" />
 
+<!-- 项目选择模态框 -->
+<ProjectSelectModal @ref="_projectSelectModal" OnProjectSelected="OnProjectSelected" />
+
 <!-- 文件操作菜单 -->
 @if (_showFileActionSheet && _selectedFileNode != null)
 {

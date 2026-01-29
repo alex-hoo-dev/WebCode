@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Markdig;
 using System.IO;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using WebCodeCli.Domain.Domain.Model;
@@ -32,6 +33,7 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
     [Inject] private ISessionOutputService SessionOutputService { get; set; } = default!;
     [Inject] private IUserContextService UserContextService { get; set; } = default!;
     [Inject] private IVersionService VersionService { get; set; } = default!;
+    [Inject] private HttpClient Http { get; set; } = default!;
     
     #endregion
     
@@ -1559,53 +1561,91 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
     
     private async Task CreateNewSession()
     {
-        _sessionId = Guid.NewGuid().ToString();
-        _messages.Clear();
-        _currentSession = null;
-        _jsonlEvents.Clear();
-        _rawOutput = string.Empty;
-        _isJsonlOutputActive = false;
-        _jsonlPendingBuffer = string.Empty;
-        _jsonlAssistantMessageBuilder = null;
-        ResetEventDisplayCount();
-        _workspaceFiles.Clear();
-        _currentFolderItems.Clear();
-        _breadcrumbs.Clear();
-        _selectedHtmlFile = string.Empty;
-        _htmlPreviewUrl = string.Empty;
+        // 显示项目选择对话框
+        await _projectSelectModal.ShowAsync();
+    }
 
-        var workspacePath = CliExecutorService.GetSessionWorkspacePath(_sessionId);
-        if (!Directory.Exists(workspacePath))
-        {
-            Directory.CreateDirectory(workspacePath);
-        }
+    /// <summary>
+    /// 处理项目选择结果（移动端）
+    /// </summary>
+    private async Task OnProjectSelected(ProjectSelectionResult selection)
+    {
+        await CreateNewSessionWithProjectAsync(selection.ProjectId, selection.IncludeGit);
+        StateHasChanged();
+    }
 
-        _currentSession = new SessionHistory
-        {
-            SessionId = _sessionId,
-            Title = "新会话",
-            CreatedAt = DateTime.Now,
-            UpdatedAt = DateTime.Now,
-            WorkspacePath = workspacePath,
-            ToolId = _selectedToolId,
-            Messages = new List<ChatMessage>(),
-            IsWorkspaceValid = true
-        };
-
+    /// <summary>
+    /// 创建新会话（带项目关联，移动端）
+    /// </summary>
+    private async Task CreateNewSessionWithProjectAsync(string? projectId, bool includeGit)
+    {
         try
         {
+            _sessionId = Guid.NewGuid().ToString();
+            _messages.Clear();
+            _currentSession = null;
+            _jsonlEvents.Clear();
+            _rawOutput = string.Empty;
+            _isJsonlOutputActive = false;
+            _jsonlPendingBuffer = string.Empty;
+            _jsonlAssistantMessageBuilder = null;
+            ResetEventDisplayCount();
+            _workspaceFiles.Clear();
+            _currentFolderItems.Clear();
+            _breadcrumbs.Clear();
+            _selectedHtmlFile = string.Empty;
+            _htmlPreviewUrl = string.Empty;
+
+            var workspacePath = await CliExecutorService.InitializeSessionWorkspaceAsync(_sessionId, projectId, includeGit);
+
+            string? projectName = null;
+            if (!string.IsNullOrEmpty(projectId))
+            {
+                try
+                {
+                    var response = await Http.GetAsync($"/api/project/{projectId}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var project = await response.Content.ReadFromJsonAsync<ProjectInfo>();
+                        projectName = project?.Name;
+                    }
+                }
+                catch
+                {
+                    // 忽略获取项目名称失败
+                }
+            }
+
+            _currentSession = new SessionHistory
+            {
+                SessionId = _sessionId,
+                Title = string.IsNullOrEmpty(projectName) ? "新会话" : $"新会话 - {projectName}",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                WorkspacePath = workspacePath,
+                ToolId = _selectedToolId,
+                Messages = new List<ChatMessage>(),
+                IsWorkspaceValid = true,
+                ProjectId = projectId,
+                ProjectName = projectName
+            };
+
             await SessionHistoryManager.SaveSessionImmediateAsync(_currentSession);
             await LoadSessions();
+            await LoadWorkspaceFiles();
+            StateHasChanged();
         }
-        catch { }
-
-        StateHasChanged();
+        catch (Exception ex)
+        {
+            Console.WriteLine($"创建新会话失败: {ex.Message}");
+            Console.WriteLine($"错误详情: {ex.StackTrace}");
+        }
     }
     
     private async Task CreateNewSessionFromDrawer()
     {
-        await CreateNewSession();
         CloseSessionDrawer();
+        await CreateNewSession();
     }
     
     private async Task LoadSessionFromDrawer(string sessionId)
@@ -2200,6 +2240,7 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
     private ProgressTracker _progressTracker = default!;
     private QuickActionsPanel _quickActionsPanel = default!;
     private UpdateNotificationModal _updateNotificationModal = default!;
+    private ProjectSelectModal _projectSelectModal = default!;
     
     // 版本相关
     private string _currentVersion = string.Empty;
