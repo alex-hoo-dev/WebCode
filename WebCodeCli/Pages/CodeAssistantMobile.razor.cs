@@ -2208,6 +2208,62 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
     private bool _showToolPicker = false;
     private bool _showLanguagePicker = false;
     
+    // PWA 安装相关
+    private bool _showPwaInstallPrompt = false;
+    private bool _isPwaInstalled = false;
+    
+    /// <summary>
+    /// 检查 PWA 安装状态
+    /// </summary>
+    private async Task CheckPwaInstallState()
+    {
+        try
+        {
+            // 检查是否已以独立模式运行（已安装）
+            _isPwaInstalled = await JSRuntime.InvokeAsync<bool>("eval", 
+                "window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true");
+            
+            if (_isPwaInstalled)
+            {
+                _showPwaInstallPrompt = false;
+                return;
+            }
+            
+            // 检查是否有延迟的安装提示
+            var hasInstallPrompt = await JSRuntime.InvokeAsync<bool>("eval", 
+                "window.PWA && window.PWA.state && window.PWA.state.deferredPrompt !== null");
+            
+            _showPwaInstallPrompt = hasInstallPrompt;
+        }
+        catch
+        {
+            _showPwaInstallPrompt = false;
+        }
+    }
+    
+    /// <summary>
+    /// 触发 PWA 安装
+    /// </summary>
+    private async Task TriggerPwaInstall()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                if (window.PWA && window.PWA.promptInstall) {
+                    window.PWA.promptInstall();
+                }
+            ");
+            
+            // 安装后隐藏提示
+            _showPwaInstallPrompt = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PWA] 安装失败: {ex.Message}");
+        }
+    }
+    
     private async Task OpenEnvConfig()
     {
         var selectedTool = _availableTools.FirstOrDefault(t => t.Id == _selectedToolId);
@@ -2478,6 +2534,17 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
 
             // 设置移动端视口
             await SetupMobileViewport();
+            
+            // 延迟检查 PWA 安装状态（等待 pwa-registration.js 初始化）
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(2000); // 等待 PWA 脚本初始化
+                await InvokeAsync(async () =>
+                {
+                    await CheckPwaInstallState();
+                    StateHasChanged();
+                });
+            });
         }
     }
     

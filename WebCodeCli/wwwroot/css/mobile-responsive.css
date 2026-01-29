@@ -1,6 +1,53 @@
 /* 移动端全局响应式优化样式 */
 
-/* 基础响应式设置 */
+/* ===== PWA 模式优化 ===== */
+
+/* PWA独立模式下的优化 */
+@media all and (display-mode: standalone) {
+    /* 确保全屏布局正确 */
+    html, body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+    
+    /* 优化状态栏区域 */
+    body {
+        padding-top: env(safe-area-inset-top, 0);
+    }
+    
+    /* 隐藏PWA中不需要的浏览器UI元素 */
+    .browser-only {
+        display: none !important;
+    }
+}
+
+/* iOS Safari 添加到主屏幕后的优化 */
+@media all and (display-mode: standalone), 
+       all and (-webkit-touch-callout: none) {
+    /* 确保应用填满屏幕 */
+    #app {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        min-height: 100dvh;
+    }
+}
+
+/* PWA 安装提示样式增强 */
+.pwa-installed {
+    /* 已安装PWA的特殊样式 */
+}
+
+.pwa-installed .pwa-install-prompt {
+    display: none !important;
+}
+
+/* ===== 基础响应式设置 ===== */
 * {
     -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1); /* 优化点击反馈 */
     -webkit-touch-callout: none; /* 禁用长按菜单 */
@@ -12,14 +59,18 @@ html {
     text-size-adjust: 100%;
     /* 启用平滑滚动 */
     scroll-behavior: smooth;
+    /* 使用动态视口高度 */
+    height: 100%;
 }
 
 body {
     /* 防止橡皮筋效果 */
     overscroll-behavior-y: none;
-    /* 确保全屏显示 */
+    /* 确保全屏显示 - 使用多种单位兼容 */
     min-height: 100vh;
     min-height: -webkit-fill-available;
+    min-height: 100dvh; /* 动态视口高度 */
+    height: 100%;
 }
 
 /* 移动端视口高度修复 */

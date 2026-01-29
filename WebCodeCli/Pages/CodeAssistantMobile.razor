@@ -693,6 +693,28 @@
                     </div>
                 }
                 
+                <!-- PWA 安装提示 -->
+                @if (_showPwaInstallPrompt)
+                {
+                    <div class="mx-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="flex items-center gap-4 p-4">
+                            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-white font-semibold text-sm">@T("pwa.addToHomeScreen")</p>
+                                <p class="text-white/80 text-xs mt-0.5">@T("pwa.installDescription")</p>
+                            </div>
+                            <button @onclick="TriggerPwaInstall"
+                                    class="flex-shrink-0 px-4 py-2 bg-white text-blue-600 rounded-xl text-sm font-semibold hover:bg-gray-100 active:scale-95 transition-all">
+                                @T("pwa.install")
+                            </button>
+                        </div>
+                    </div>
+                }
+                
                 <!-- 工具选择 -->
                 <div class="mx-4 bg-white rounded-2xl shadow-sm overflow-hidden">
                     <div class="px-4 py-3 border-b border-gray-100">
