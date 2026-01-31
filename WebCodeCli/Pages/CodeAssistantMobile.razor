@@ -363,7 +363,7 @@
                             @if (isAssistant && isExpanded && hasOutputDetails && messageIndex == _messages.Count - 1)
                             {
                                 <div class="mt-2 w-full max-w-[95%] animate-slideUp">
-                                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="bg-white rounded-lg overflow-hidden">
                                         <!-- 输出内容 -->
                                         <div class="max-h-[50vh] overflow-auto">
                                             <OutputResultPanel 
@@ -439,7 +439,7 @@
                             @if (_isJsonlOutputActive && _jsonlEvents.Any() && IsMessageExpanded(-1))
                             {
                                 <div class="mt-2 w-full max-w-[95%] animate-slideUp">
-                                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                    <div class="bg-white rounded-lg overflow-hidden">
                                         <!-- 输出内容 -->
                                         <div class="max-h-[50vh] overflow-auto">
                                             <OutputResultPanel 
