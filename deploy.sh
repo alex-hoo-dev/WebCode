@@ -80,22 +80,22 @@ fix_data_permissions() {
     # 检测是否为 root 用户
     if [ "$EUID" -eq 0 ]; then
         # root 用户可以直接修改权限
-        chown -R 1001:1001 webcodecli-data webcodecli-logs webcodecli-workspaces
+        chown -R 1000:1000 webcodecli-data webcodecli-logs webcodecli-workspaces
     elif command -v sudo &> /dev/null; then
         # 非 root 用户但有 sudo 权限
-        sudo chown -R 1001:1001 webcodecli-data webcodecli-logs webcodecli-workspaces
+        sudo chown -R 1000:1000 webcodecli-data webcodecli-logs webcodecli-workspaces
     else
         # 非 root 用户且没有 sudo
         # 检查目录是否已经是正确的所有权
         stat_result=$(stat -c "%u:%g" webcodecli-data 2>/dev/null || echo "")
-        if [ "$stat_result" = "1001:1001" ]; then
+        if [ "$stat_result" = "1000:1000" ]; then
             echo -e "${GREEN}✓ 数据目录权限正确${NC}"
         else
             echo -e "${YELLOW}警告: 无法使用 sudo 修改权限${NC}"
             echo -e "${YELLOW}当前目录所有者为: $(stat -c "%u:%g" webcodecli-data 2>/dev/null || echo "未知")${NC}"
             echo -e "${YELLOW}容器将尝试在启动时自动修复权限${NC}"
             echo -e "${YELLOW}如果容器启动后仍有权限问题，请手动运行:${NC}"
-            echo "  sudo chown -R 1001:1001 webcodecli-data webcodecli-logs webcodecli-workspaces"
+            echo "  sudo chown -R 1000:1000 webcodecli-data webcodecli-logs webcodecli-workspaces"
         fi
     fi
 

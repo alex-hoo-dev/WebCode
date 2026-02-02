@@ -57,8 +57,15 @@ services:
       - ./webcodecli-workspaces:/app/workspaces
       # 日志持久化
       - ./webcodecli-logs:/app/logs
-
-    # 使用 bridge 网络模式（WSL 环境更兼容）
+      # 同步宿主时间
+      - /etc/localtime:/etc/localtime:ro
+      # ============================================
+      # OpenCode 数据卷
+      # ============================================
+      - /home/${USER}/.config/opencode:/home/appuser/.config/opencode
+      - /home/${USER}/.local/share/opencode:/home/appuser/.local/share/opencode
+      - /home/${USER}/.local/state/opencode:/home/appuser/.local/state/opencode
+      # 使用 bridge 网络模式（WSL 环境更兼容）
     ports:
       - "5000:5000"
 

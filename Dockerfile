@@ -115,7 +115,9 @@ RUN mkdir -p /app/data /app/workspaces /app/logs
 # ============================================
 # 创建非 root 用户以提高安全性
 # ============================================
-RUN groupadd -r appuser && useradd -r -g appuser -u 1001 -m appuser
+# 先将 ubuntu 用户的 UID/GID 改为 1001，再创建 appuser 使用 UID 1000（减少层数）
+RUN usermod -u 1001 ubuntu && groupmod -g 1001 ubuntu && \
+    groupadd -r -g 1000 appuser && useradd -r -g appuser -u 1000 -m appuser
 
 # 复制发布文件（在切换用户之前）
 COPY --from=publish /app/publish .
