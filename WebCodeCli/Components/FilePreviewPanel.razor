@@ -79,14 +79,14 @@
     }
     else if (PreviewType == FilePreviewType.Code)
     {
-        <div class="@(FullHeight ? "h-full" : MaxHeight ?? "max-h-[calc(100vh-12rem)]") overflow-y-auto bg-gray-900">
-            <pre class="!m-0 !p-4"><code id="@CodeElementId" class="language-@Language !text-sm @(ShowLineNumbers ? "line-numbers" : "")">@FileContent</code></pre>
+        <div class="@(FullHeight ? "h-full" : MaxHeight ?? "max-h-[calc(100vh-12rem)]") overflow-y-auto overflow-x-hidden bg-gray-900">
+            <pre class="!m-0 !p-4 !overflow-x-hidden" style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-word !important; overflow-wrap: anywhere !important;"><code id="@CodeElementId" class="language-@Language !text-sm @(ShowLineNumbers ? "line-numbers" : "")" style="white-space: pre-wrap !important; word-wrap: break-word !important; word-break: break-word !important; display: block !important;">@FileContent</code></pre>
         </div>
     }
     else if (PreviewType == FilePreviewType.Text)
     {
-        <div class="@(FullHeight ? "h-full" : MaxHeight ?? "max-h-[calc(100vh-12rem)]") overflow-y-auto bg-white">
-            <pre class="p-4 text-sm font-mono text-gray-800 whitespace-pre-wrap break-words">@FileContent</pre>
+        <div class="@(FullHeight ? "h-full" : MaxHeight ?? "max-h-[calc(100vh-12rem)]") overflow-auto bg-white">
+            <pre class="p-4 text-sm font-mono text-gray-800 whitespace-pre-wrap break-words overflow-wrap-anywhere">@FileContent</pre>
         </div>
     }
     else
