@@ -92,15 +92,39 @@
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     private bool _isComposing;
+    private bool _previousShow;
     private DotNetObjectReference<CreateFolderDialog>? _dotNetRef;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnParametersSetAsync()
     {
-        if (firstRender)
+        // 当对话框从隐藏变为显示时，设置组合事件
+        if (Show && !_previousShow)
         {
-            _dotNetRef = DotNetObjectReference.Create(this);
-            await JSRuntime.InvokeVoidAsync("setupCompositionEvents", "create-folder-input", _dotNetRef);
+            await Task.Delay(50); // 等待DOM渲染
+            try
+            {
+                _dotNetRef = DotNetObjectReference.Create(this);
+                await JSRuntime.InvokeVoidAsync("setupCompositionEvents", "create-folder-input", _dotNetRef);
+            }
+            catch
+            {
+                // 忽略JS互操作错误
+            }
         }
+        // 当对话框从显示变为隐藏时，清理组合事件
+        else if (!Show && _previousShow)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("disposeCompositionEvents", "create-folder-input");
+            }
+            catch
+            {
+                // 忽略JS互操作错误
+            }
+        }
+        
+        _previousShow = Show;
     }
 
     [JSInvokable]

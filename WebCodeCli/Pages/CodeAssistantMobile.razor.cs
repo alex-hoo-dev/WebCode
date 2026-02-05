@@ -2181,44 +2181,51 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
         }
     }
     
-    private void ShowCreateFolderDialog()
+    private async Task ShowCreateFolderDialogAsync()
     {
         _newFolderName = string.Empty;
         _showCreateFolderDialog = true;
+        StateHasChanged();
         
-        // 设置组合事件监听
-        _ = Task.Run(async () =>
+        // 等待DOM渲染后设置组合事件监听
+        await Task.Delay(50);
+        try
         {
-            await Task.Delay(100); // 等待DOM渲染
-            try
-            {
-                _createFolderDotNetRef = DotNetObjectReference.Create(this);
-                await JSRuntime.InvokeVoidAsync("setupCompositionEvents", "mobile-create-folder-input", _createFolderDotNetRef);
-            }
-            catch
-            {
-                // 忽略JS互操作错误
-            }
-        });
+            _createFolderDotNetRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("setupCompositionEvents", "mobile-create-folder-input", _createFolderDotNetRef);
+        }
+        catch
+        {
+            // 忽略JS互操作错误
+        }
     }
     
-    private void CloseCreateFolderDialog()
+    private void ShowCreateFolderDialog()
+    {
+        // 使用 InvokeAsync 确保在 Blazor 渲染上下文中执行
+        _ = InvokeAsync(ShowCreateFolderDialogAsync);
+    }
+    
+    private async Task CloseCreateFolderDialogAsync()
     {
         _showCreateFolderDialog = false;
         _newFolderName = string.Empty;
         
         // 清理组合事件监听
-        _ = Task.Run(async () =>
+        try
         {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("disposeCompositionEvents", "mobile-create-folder-input");
-            }
-            catch
-            {
-                // 忽略JS互操作错误
-            }
-        });
+            await JSRuntime.InvokeVoidAsync("disposeCompositionEvents", "mobile-create-folder-input");
+        }
+        catch
+        {
+            // 忽略JS互操作错误
+        }
+    }
+    
+    private void CloseCreateFolderDialog()
+    {
+        // 使用 InvokeAsync 确保在 Blazor 渲染上下文中执行
+        _ = InvokeAsync(CloseCreateFolderDialogAsync);
     }
     
     [JSInvokable]
