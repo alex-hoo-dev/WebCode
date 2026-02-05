@@ -2203,7 +2203,17 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
     private void ShowCreateFolderDialog()
     {
         // 使用 InvokeAsync 确保在 Blazor 渲染上下文中执行
-        _ = InvokeAsync(ShowCreateFolderDialogAsync);
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await ShowCreateFolderDialogAsync();
+            }
+            catch
+            {
+                // 忽略错误，避免未处理的异常导致应用崩溃
+            }
+        });
     }
     
     private async Task CloseCreateFolderDialogAsync()
@@ -2225,7 +2235,17 @@ public partial class CodeAssistantMobile : ComponentBase, IAsyncDisposable
     private void CloseCreateFolderDialog()
     {
         // 使用 InvokeAsync 确保在 Blazor 渲染上下文中执行
-        _ = InvokeAsync(CloseCreateFolderDialogAsync);
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await CloseCreateFolderDialogAsync();
+            }
+            catch
+            {
+                // 忽略错误，避免未处理的异常导致应用崩溃
+            }
+        });
     }
     
     [JSInvokable]
